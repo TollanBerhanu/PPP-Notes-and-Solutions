@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE NoImplicitPrelude   #-} -- Hides the haskell Prelude (it's not imported implicitly)
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -17,8 +17,8 @@ import           Plutus.Contract
 import           PlutusTx            (Data (..))
 import qualified PlutusTx
 import qualified PlutusTx.Builtins   as Builtins
-import           PlutusTx.Prelude    hiding (Semigroup(..), unless)
-import           Ledger              hiding (singleton)
+import           PlutusTx.Prelude    hiding (Semigroup(..), unless) -- Plutus's version of Prelude. It adds/removes/copies many things 
+import           Ledger              hiding (singleton)             -- from Haskell Prelude, but makes everything inlineable
 import           Ledger.Constraints  as Constraints
 import qualified Ledger.Scripts      as Scripts
 import           Ledger.Ada          as Ada

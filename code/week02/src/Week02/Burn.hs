@@ -37,8 +37,8 @@ import           Text.Printf         (printf)
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
-mkValidator _ _ _ = traceError "BURNT!"
-
+mkValidator _ _ _ = traceError "BURNT!" -- Plutus version of error that displays an error message 
+                                        -- We can write strings like this because of the {-# OverloadedStrings #-} pragma
 validator :: Validator
 validator = mkValidatorScript $$(PlutusTx.compile [|| mkValidator ||])
 
