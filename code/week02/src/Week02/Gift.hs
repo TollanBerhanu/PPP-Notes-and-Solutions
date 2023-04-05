@@ -30,12 +30,33 @@ import           Text.Printf         (printf)
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
-{-# INLINABLE mkValidator #-}
+-- ================== ON-CHAIN CODE ==============================
+--              Datum           Redeemer        Context
 mkValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
 mkValidator _ _ _ = ()
+{-# INLINABLE mkValidator #-} -- this pragma is used to make the function inlineable so that we can put it in the template haskell oxford brackets
+-- The datum is arbitrary data that comes with the UTxO produced by the transaction
+-- The redeemer comes from the consuming transaction that wants to use the UTxO as input
+-- The script context presents the whole txn with all the inputs and outputs
+
+-- this is the how Data is defined
+-- type Data :: *
+-- data Data =
+    --   Constr Integer [Data]
+    --   | Map [(Data, Data)]
+    --   | List [Data]
+    --   | I Integer
+    --   | B bytestring
 
 validator :: Validator
 validator = mkValidatorScript $$(PlutusTx.compile [|| mkValidator ||])
+-- mkValidator should be inlineable (achieved with the inlineable pragma)
+-- compile expects source code (not a function), that's why we use template haskell to extract the syntax tree of the function
+-- using the oxford brackets [|| ||]. The oxford brackets replace any function with its actual implementation / source code
+-- Then compile converts the Haskell source code into plutus core ... it returns syntax for CompiledCode (BuiltinData -> ... -> ())
+-- The plutus core expression is spliced back into sth of value using $$
+-- mkValidator script takes CompiledCode and produces a validator
+
 
 valHash :: Ledger.ValidatorHash
 valHash = Scripts.validatorHash validator

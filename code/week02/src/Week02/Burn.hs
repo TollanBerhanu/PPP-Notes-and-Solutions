@@ -1,7 +1,11 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-} -- This ghc extension is used to treat normal strings as Bytestrings
+{-# LANGUAGE OverloadedStrings   #-} -- This ghc allows us to use literal strings as other string like types (like bytestring)
+-- Prelude PlutusTx Week02.Burn> :set -XOverloadedStrings
+-- Prelude PlutusTx Week02.Burn> B "Hello"
+-- B "Hello"
+-- > Map [(I 12,B "twelve"),(List [I 0],I 34)] ... this expression has type 'Data'
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeApplications    #-}
