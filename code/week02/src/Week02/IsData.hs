@@ -30,25 +30,31 @@ import           Playground.Types     (KnownCurrency (..))
 import           Prelude              (IO, Semigroup (..), String)
 import           Text.Printf          (printf)
 
-newtype MySillyRedeemer = MySillyRedeemer Integer
+newtype MySillyRedeemer = MySillyRedeemer Integer -- let's say we want to use our custom datatype for our redeemer instead of a 
+                                                  -- predefined type
 
-PlutusTx.unstableMakeIsData ''MySillyRedeemer
+PlutusTx.unstableMakeIsData ''MySillyRedeemer -- this is a template Haskell function that takes a type, the syntax to provide a type
+-- is two single-quotes. This function will automatically write an instance of IsData for MySillyRedeemer at compile time
+-- Note that this function is unstable (there's also a stable version that we can use in production code). The unstable version does
+-- not gurantee the constructor number (Constr 0) will be reserved across different plutus versions
+-- We can check this in the repl: toData(MySillyReedemer 42) ... Constr 0 [I 42]
 
 {-# INLINABLE mkValidator #-}
-mkValidator :: () -> MySillyRedeemer -> ScriptContext -> Bool
+mkValidator :: () -> MySillyRedeemer -> ScriptContext -> Bool -- redeemer is our custom datatype
 mkValidator _ (MySillyRedeemer r) _ = traceIfFalse "wrong redeemer" $ r == 42
 
 data Typed
 instance Scripts.ValidatorTypes Typed where
     type instance DatumType Typed = ()
-    type instance RedeemerType Typed = MySillyRedeemer
+    type instance RedeemerType Typed = MySillyRedeemer -- tell the high-lever type to plutus
 
 typedValidator :: Scripts.TypedValidator Typed
 typedValidator = Scripts.mkTypedValidator @Typed
     $$(PlutusTx.compile [|| mkValidator ||])
     $$(PlutusTx.compile [|| wrap ||])
   where
-    wrap = Scripts.wrapValidator @() @MySillyRedeemer
+    wrap = Scripts.wrapValidator @() @MySillyRedeemer -- wrap uses toData and fromData in the backend, we defined an instance of 
+                                                      -- PlutusTx.IsData for MySillyRedeemer above
 
 validator :: Validator
 validator = Scripts.validatorScript typedValidator
@@ -78,6 +84,7 @@ grab r = do
                   Constraints.otherScript validator
         tx :: TxConstraints Void Void
         tx      = mconcat [mustSpendScriptOutput oref $ Redeemer $ PlutusTx.toBuiltinData (MySillyRedeemer r) | oref <- orefs]
+                                            -- this works because we automatically defined an instance of IsData for MySillyRedeemer
     ledgerTx <- submitTxConstraintsWith @Void lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
     logInfo @String $ "collected gifts"

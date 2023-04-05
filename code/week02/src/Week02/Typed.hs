@@ -33,36 +33,47 @@ import           Text.Printf          (printf)
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: () -> Integer -> ScriptContext -> Bool
+            -- Datum -> Redeemer -> Context -> ()
 mkValidator _ r _ = traceIfFalse "wrong redeemer" $ r == 42
 
+-- This is mostly boilerplate ... using high-level datatypes require more boilerplate and more resources
+-- ******************************************************************************
 data Typed
 instance Scripts.ValidatorTypes Typed where
-    type instance DatumType Typed = ()
-    type instance RedeemerType Typed = Integer
+    type instance DatumType Typed = () -- tell plutus the datatype of datum is ()
+    type instance RedeemerType Typed = Integer -- and the datatype of the redeemer is Integer
 
 typedValidator :: Scripts.TypedValidator Typed
-typedValidator = Scripts.mkTypedValidator @Typed
+typedValidator = Scripts.mkTypedValidator @Typed -- typed version of validator
     $$(PlutusTx.compile [|| mkValidator ||])
-    $$(PlutusTx.compile [|| wrap ||])
+    $$(PlutusTx.compile [|| wrap ||]) 
   where
-    wrap = Scripts.wrapValidator @() @Integer
+    wrap = Scripts.wrapValidator @() @Integer -- wrap translates from the high-level type to low level
+                                              -- it uses toData and fromData functions to convert to/from BuiltInData
+    -- For example: toData () ... Constr 0 []                               toData (42 :: Integer) ... I 42
+    --              fromData (Constr 0 []) :: Maybe () ... Just ()          fromData (I 42) :: Maybe Integer ... Just 42
+
 
 validator :: Validator
-validator = Scripts.validatorScript typedValidator
+validator = Scripts.validatorScript typedValidator -- convert the typed validator to an untyped validator
 
 valHash :: Ledger.ValidatorHash
-valHash = Scripts.validatorHash typedValidator
+valHash = Scripts.validatorHash typedValidator -- create a validator using typed validator
 
 scrAddress :: Ledger.Address
-scrAddress = scriptAddress validator
-
+scrAddress = scriptAddress validator -- create a script address using an untyped validator
+-- ******************************************************************************
+ 
+-- Here starts the off-chain code
 type GiftSchema =
             Endpoint "give" Integer
         .\/ Endpoint "grab" Integer
 
 give :: AsContractError e => Integer -> Contract w s e ()
 give amount = do
-    let tx = mustPayToTheScript () $ Ada.lovelaceValueOf amount
+    let tx = mustPayToTheScript () $ Ada.lovelaceValueOf amount -- mustPayToTheScript means that the txn only involves one
+    -- script, even though the txn can take i/ps / produce o/ps from different script addresses, you can define one script
+    -- as 'the script'. Its a common case in typed version than mustPayToOtherScript because we directly give it the datum()
     ledgerTx <- submitTxConstraints typedValidator tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
     logInfo @String $ printf "made a gift of %d lovelace" amount
