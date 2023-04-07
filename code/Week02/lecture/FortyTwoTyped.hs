@@ -25,6 +25,12 @@ mk42Validator _ r _ = traceIfFalse "expected 42" $ r == 42
 validator :: PlutusV2.Validator
 validator = PlutusV2.mkValidatorScript $$(PlutusTx.compile [|| wrapValidator mk42Validator ||])
 
+-- wrapValidator does this in the backend ... this has more overhead (the serialized version is way longer) than the untyped version
+-- Prelude PlutusTx.Builtins Plutus.V2.Ledger.Api FortyTwo> unsafeFromBuiltinData (mkB "Hello") :: BuiltinByteString 
+-- "Hello"
+-- Prelude PlutusTx.Builtins Plutus.V2.Ledger.Api FortyTwo> unsafeFromBuiltinData (mkI 42) :: Integer
+-- 42
+
 ---------------------------------------------------------------------------------------------------
 ------------------------------------- HELPER FUNCTIONS --------------------------------------------
 
