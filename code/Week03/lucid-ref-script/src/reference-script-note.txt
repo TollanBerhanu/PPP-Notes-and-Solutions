@@ -1,0 +1,12 @@
+Lets say you create a script that can be consumed by thousands of transactions, all of these nodes will have to include the script 
+in their output which increases the size of the blockchain.
+
+Since the Vasil hardfork, reference scripts can be used as a solution to this problem. Previosly, a txn o/p consists of an address, 
+a value and an optional datum... now we can optionally include a script too. Then, when a txn wants to spend such UTxOs, it doesn't 
+have to include the script but instead it points to the UTxO that has this script attached.
+
+It's costly to create this reference script o/ps but its cheap to use them. (the pointer is smaller than the script)
+To make these UTxOs holding the scripts accessible, it can be put in some arbitrary UTxO, or in our own wallet (for testing), but it
+is advisable to put it somewhere inaccessible (like the BURN script). The 'burn' script ignores it's three arguments and always
+produces an error... its impossible to spend any UTxO located at the address of the burn script. The existence of the script is 
+reliable and you can hardcode the address of the script in the TxOutRef

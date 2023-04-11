@@ -22,6 +22,11 @@ import           Utilities                 (wrapValidator, writeValidatorToFile)
 ---------------------------------------------------------------------------------------------------
 ----------------------------------- ON-CHAIN / VALIDATOR ------------------------------------------
 
+-- When incorporating data in the datum, we will have a script with one script address and all UTxOs can be found using that script
+-- address, but when using parameterized scripts, we will have different script addresses for different paraeters.
+-- So, anyone who wishes to access that UTxO must know the beneficiary and the deadline inorder to compute the hash. We can also 
+    -- include the beneficiary as a parameter and the deadline in the datum so that all the vestings for one beneficiary could sit
+    -- at the same address (even if they have different deadlines)
 data VestingParams = VestingParams
     { beneficiary :: PubKeyHash
     , deadline    :: POSIXTime

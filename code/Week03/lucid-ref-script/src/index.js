@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './bootstrap-datetimepicker.min.css';
 import * as L from 'lucid-cardano';
 
+// This script always returns an error (UTxOs at this address can't be spent)
 const burnScript = {
     type: "PlutusV2",
     script: "581f581d01000022232632498cd5ce24810b6974206275726e7321212100120011"
@@ -32,7 +33,7 @@ async function loadCardano() {
         const api = await nami.enable();
         console.log('nami enabled');
         const lucid = await L.Lucid.new(
-            new L.Blockfrost("https://cardano-preview.blockfrost.io/api/v0", "preview1JXEDVldkIyBkxEUrEx3n9ll4afFK1Xj"),
+            new L.Blockfrost("https://cardano-preview.blockfrost.io/api/v0", "previewTboSqp1nB894P6wgrGA1PBv8rgUvIS5v"),
             "Preview",
         );
         console.log('lucid active');
@@ -170,12 +171,18 @@ async function findUTxO(ref) {
     return null;
 }
 
+// Getting the UTxO with the reference script (VestingScript)
+// TxOutRef is just the txn that is used to create the burnScript (which has the optional parameter: the serealizede vestingScript)
+// Look at this link for more details: https://preview.cardanoscan.io/transaction/902aba5b2b72df2423ee33d4af294e21e0903c31e34917a4de8570b3e8d08c7b?tab=utxo
+// In this case we give it the txn hash and the index of the UTxO that includes the serealized script (optional parameter)
+// That is the first UTxO given to the script with 13 ADA (because the vesting script is very large)
+// The other UTxO is the one given to the changeAddress
 async function getReferenceUTxO() {
-    const utxos = await lucid.utxosByOutRef([{
-        txHash: "902aba5b2b72df2423ee33d4af294e21e0903c31e34917a4de8570b3e8d08c7b",
-        outputIndex: 0
+    const utxos = await lucid.utxosByOutRef([{ // find all output UTxOs in a given txn hash (TxOutRef)
+        txHash: "902aba5b2b72df2423ee33d4af294e21e0903c31e34917a4de8570b3e8d08c7b", // Hardcoded Txn hash
+        outputIndex: 0         // The index of the txn that includes the vestingScript as an optional parameter
     }]);
-    return utxos[0];
+    return utxos[0]; // return the UTxO that has the serialized vestingScript
 }
 
 async function onVest() {
@@ -213,7 +220,9 @@ async function onClaim() {
         const tx = await lucid
             .newTx()
             .collectFrom([utxo.utxo], L.Data.void())
-            .readFrom([referenceUTxO])
+            .readFrom([referenceUTxO]) // Include the reference UTxO (UTxO at the burnAddress)
+                                      // The txn won't consume this reference input, it will only look at it (because the reference script
+                                      // to be executed is on the blockchain)
             .addSignerKey(pkh)
             .validFrom(Number(utxo.datum.deadline))
             .complete();
@@ -225,10 +234,18 @@ async function onClaim() {
     referenceText.value = "";
 }
 
+// Deploy the vesting script to the burn address ... if you do this, you will get a different txn hash
+// Here, we are sending some UTxO to the burnAddress with the optional reference script (serialzed form of vestingScript)
+// This action is triggered via a 'Deploy' button on the UI
 async function onDeploy() {
     const tx = await lucid
         .newTx()
         .payToContract(burnAddress, { inline: L.Data.void(), scriptRef: vestingScript }, {})
+        // the first is our datum (unit), the second is the optional reference script (serialized vesting script)
+        // the last field ({}) specifies the amount we pay to the UTxO, but we leave it empty so that lucid can automatically deduct
+        // the minimum required deposit + txn_fee from our wallet(which depends on the size of the o/p, E.g., if it has a large datum)
+            // in our case, it deducts 13 ADA because the serialized vesitng script is very large (still too expensive in the real 
+            // world). Because it is given to the burn script, we unfortunately can't get it back
         .complete();
     signAndSubmitCardanoTx(tx);
 }
@@ -240,8 +257,8 @@ function onCopy(elt) {
 window.L = L;
 window.lucid = await loadCardano();
 const vestingAddress = lucid.utils.validatorToAddress(vestingScript);
-const burnAddress = lucid.utils.validatorToAddress(burnScript);
-const referenceUTxO = await getReferenceUTxO();
+const burnAddress = lucid.utils.validatorToAddress(burnScript); // create an address for the burnScript (serialisez form -> addr_...)
+const referenceUTxO = await getReferenceUTxO(); // save the refenence UTxO (UTxO with the reference script) in a global variable
 
 $(function () {
     $(".dtp").datetimepicker({
