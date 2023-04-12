@@ -1,0 +1,72 @@
+
+**********************************   Script Contexts *********************************************
+TxInfo	 
+
+    txInfoInputs :: [TxInInfo] ... inputs of the txn (have multiple fields)
+
+    txInfoOutputs :: [TxOut] ... outputs of the txn (have multiple fields)
+
+    txInfoFee :: Value ...  The fee paid by this transaction.
+
+    txInfoMint :: Value ... The amount/value of newly minted or burned native tokens by this transaction.
+
+    txInfoDCert :: [DCert] ... List of Digests of certificates included in this transaction (delegation certificates)
+
+    txInfoWdrl :: [(StakingCredential, Integer)] ... Withdrawals from rewards
+
+    txInfoValidRange :: POSIXTimeRange ... The valid range for the transaction. (By default, all txns use infinite time range 
+                                            (genesis block - eternity))
+        The problem is that ouroboro (concensus protocol in cardano) uses slots to measure time, so conversion b/n actual POSIX time
+        and slots (1 slot = 1 second). But the slot length might change in the far future so, it's not advisable to set time intervals
+        more than 36 hours from now (unless its infinite), incase a hard fork happens that will change the slot interval.
+
+    txInfoSignatories :: [PubKeyHash] ... Signatures provided with the transaction, attested that they all signed the tx
+                                            (list of public keys of those who sigh the txn using their private keys)
+
+    txInfoData :: [(DatumHash, Datum)] ... Txns that spend a script o/p need to include the datum of the script o/p
+                            whereas producing txns (that send money to a script address) only have to include the hash or an inline datum
+                            This field maps the datum values to their hash
+
+    txInfoId :: TxId  ... Hash of this pending transaction (excluding witnesses) 
+
+
+    ********************************   Handling time   ***************************************************
+    ***** interval
+    Prelude Plutus.V1.Ledger.Interval> interval (10 :: Integer) 20
+    Interval {ivFrom = LowerBound (Finite 10) True, ivTo = UpperBound (Finite 20) True}`    -- True means inclusive
+
+    Prelude Plutus.V1.Ledger.Interval> exInt = interval (10 :: Integer) 20
+
+    ***** member
+    Prelude Plutus.V1.Ledger.Interval> member 9 exInt
+    False
+    Prelude Plutus.V1.Ledger.Interval> member 10 exInt
+    True
+
+    ***** from & to
+    Prelude Plutus.V1.Ledger.Interval> member 21 $ from (30 :: Integer)     -- from 30 == interval 30 posInf (infinity)
+    False
+    Prelude Plutus.V1.Ledger.Interval> member 21 $ to (30 :: Integer)       -- to 30 == interval negInf 30
+    True
+
+    ***** intersection
+    Prelude Plutus.V1.Ledger.Interval> intersection (interval (10 :: Integer) 20) (interval (15 :: Integer) 30)
+    Interval {ivFrom = LowerBound (Finite 15) True, ivTo = UpperBound (Finite 20) True}
+
+    ***** contains & overlaps
+    Prelude Plutus.V1.Ledger.Interval> contains (to (100 :: Integer)) (interval (20 :: Integer) 80)
+    True
+    Prelude Plutus.V1.Ledger.Interval Week03.Deploy> contains (to (100 :: Integer)) (interval (20 :: Integer) 101)
+    False
+    Prelude Plutus.V1.Ledger.Interval Week03.Deploy> overlaps (to (100 :: Integer)) (interval (100 :: Integer) 200)
+    True
+    Prelude Plutus.V1.Ledger.Interval Week03.Deploy> overlaps (to (100 :: Integer)) (interval (101 :: Integer) 200)
+    False
+
+
+    QUESTIONS
+    ----------------------------------------------------------------------------------------------
+    Where does one find the script? Is it coded on every node? How does the generous gift giver request that the greedy gift receiver
+    will run the script and abide by its sacred laws?
+    What is the point of including the datum / datum hash by the producing txn. Is it located in the context (as show above)
+    Why does the spending txn (the one taking the gift) have to provide a datum
