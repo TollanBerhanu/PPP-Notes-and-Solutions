@@ -77,6 +77,8 @@ valHash = Scripts.validatorHash typedValidator
 scrAddress :: Ledger.Address
 scrAddress = scriptAddress validator
 
+-- ========================= OFF-CHAIN CODE ============================
+
 data GiveParams = GiveParams
     { gpBeneficiary :: !PaymentPubKeyHash
     , gpDeadline    :: !POSIXTime
