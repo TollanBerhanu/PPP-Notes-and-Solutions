@@ -1,4 +1,4 @@
--- The EmulatorTrace monad allows to test our on-chain code without using the plutus playground. 
+-- The EmulatorTrace monad allows to test our on-chain code without using the plutus playground.
 
 {-# LANGUAGE TypeApplications #-} -- Used for the @ symbol, used after the 'callEndpoint' function
                                   -- @"name-of-endpoint" = type of endpoint ... e.g., give, grab
