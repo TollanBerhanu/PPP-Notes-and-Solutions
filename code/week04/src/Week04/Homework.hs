@@ -10,13 +10,15 @@ module Week04.Homework where
 
 import Data.Aeson            (FromJSON, ToJSON)
 import Data.Functor          (void)
-import Data.Text             (Text)
+import Data.Text             (Text, unpack)
 import GHC.Generics          (Generic)
 import Ledger
 import Ledger.Ada            as Ada
 import Ledger.Constraints    as Constraints
 import Plutus.Contract       as Contract
 import Plutus.Trace.Emulator as Emulator
+import Data.Void                  (Void) 
+import Wallet.Emulator.Wallet
 
 data PayParams = PayParams
     { ppRecipient :: PaymentPubKeyHash
