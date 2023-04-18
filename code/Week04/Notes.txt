@@ -1,0 +1,33 @@
+If a wallet wants to access a UTxO, script or datum, it has to find it in the blockchain first. That means it has to run its own 
+local node, Use its own local database synchronized with a local or remote node (using a chain indexer) or use third party tools 
+that runs its own nodes and databeses. (E.g., Blockfrost)
+
+By now you should know the 2 ways to attach a script:
+ -> the producing txn (the one creating the script) can attach the hash of the script to the UTxO, so that the consuming txn can 
+    include the script in the txn and validators can validate by comparing the scripts' hash
+ -> the producing txn can attach a reference script to a UTxO that can't be spent, so that the consumer(s) can just reference the 
+    script when they want to spend the UTxO at that script. This allows us to combine multiple reference scripts without exceeding
+    the maximum txn size.
+
+There might be a scenario where we want to consume a UTxO at a script address and the validator of the script requires more info
+than the one available in the input, for example it might require the datum of an oracle. In that case we can provide the Oracle's
+UTxO as a reference input to access its datum (notice that we are not consuming teh UTxO, we're just referencing it).
+This and inline datums are powerful ways to share info ON-CHAIN.
+
+There are 3 ways of attaching the datum:
+    1. include datum's hash in txn o/p, 
+    2. include datum's hash in txn o/p and actual datum in txn body
+    3. include inline datum in txn o/p
+If we used the 2nd method, we can use chain indexers to query the blockchain to extract the actual datum (but it's expensive). If you
+want to put the datum on-chain, inline datum is the best choice. 
+If we use th e3rd method, we just have to indicate that inline datum is used and the script can access it automatically
+
+When submitting a txn, it will have to pass two validation steps before succeeding and being added to the ledger.
+    -> The first validation step is checking if the txn was built correctly (if all UTxOs exist, if the beneficiary of the UTxO has
+        signed, if the minimum required UTxOs are available, if all hashes are correct, if all data is available). It doesn't check
+        whether the scripts validate, so it's inexpensive and no fee/collateral is charged if it fails at this stage. If it passes, 
+        that means the node has everything it needs to run the script
+    -> In the second step, the node runs all the scripts included in the txn. If all scripts succeed, the node will add the txn to the 
+       Ledger and collects the fees. If even one script fails, the whole txn fails and the node will collect the collateral because 
+       it's computationally expensive to run scripts. The collateral is explicitly defined by the beneficiary and it must have sufficient
+       funds, doesn't include any tokens and can't be in the script address(duh).
