@@ -1,3 +1,5 @@
+******************************************************************************************************************************
+
 If a wallet wants to access a UTxO, script or datum, it has to find it in the blockchain first. That means it has to run its own 
 local node, Use its own local database synchronized with a local or remote node (using a chain indexer) or use third party tools 
 that runs its own nodes and databeses. (E.g., Blockfrost)
@@ -31,3 +33,48 @@ When submitting a txn, it will have to pass two validation steps before succeedi
        Ledger and collects the fees. If even one script fails, the whole txn fails and the node will collect the collateral because 
        it's computationally expensive to run scripts. The collateral is explicitly defined by the beneficiary and it must have sufficient
        funds, doesn't include any tokens and can't be in the script address(duh).
+
+******************************************************************************************************************************
+
+This is how we can manually send Ada to some wallet by specifying all the UTxOs to be used in the txn
+
+cardano-cli transaction build  \
+    --babbage-era  \
+    --testnet-magic 2  \
+    --tx-in 23625665a75ea0f6c03fef89669405f4ba43aeef102191ece5aac8c82c5433fd#0  \
+    --tx-in 6d49ef070bcc07251fcac4f4edbb8a8c136ea627c786b0c28a883e8f15d5424c#0  \
+    --tx-in 90fa04f0198cc06ca5e61f69b73a4c008ba8645be6bfc0617ae24bc530d598a2#0  \
+    --tx-out "addr_test1vqvuryhta8a6q0u6qcyk76vvd8skyalggzwflfaykupt97sjauluk 27000000 lovelace"  \
+    --change-address addr_test1vrw0jv8jyslxlpsl8ayk28adx2j8g9k8ucv8gtxfqk96hgsu9g832  \
+    --out-file tx.body
+
+cardano-cli transaction build  \
+    --babbage-era  \
+    --testnet-magic 2  \
+    --tx-in 23625665a75ea0f6c03fef89669405f4ba43aeef102191ece5aac8c82c5433fd#0  \
+    --tx-in 6d49ef070bcc07251fcac4f4edbb8a8c136ea627c786b0c28a883e8f15d5424c#0  \
+    --tx-in 90fa04f0198cc06ca5e61f69b73a4c008ba8645be6bfc0617ae24bc530d598a2#0  \
+    --tx-out addr_test1vqvuryhta8a6q0u6qcyk76vvd8skyalggzwflfaykupt97sjauluk 27000000 lovelace  \
+    --change-address addr_test1vqvuryhta8a6q0u6qcyk76vvd8skyalggzwflfaykupt97sjauluk  \
+    --out-file tx.body
+
+cardano-cli transaction sign  \
+    --tx-body-file tx.body  \
+    --signing-key-file 03.skey  \
+    --testnet-magic 2  \
+    --out-file tx.signed
+
+cardano-cli transaction submit  \
+    --testnet-magic 2  \
+    --tx-file tx.signed
+
+-------------------- This is how we send native tokens to another address
+---- We use the build raw option to have more control
+./cardano-cli transaction build-raw \
+    --fee 0 \
+    --tx-in fd0790f3984348f65ee22f35480b873b4eb9862065514f3e3a9c0f04d0a6ad63#0 \
+        (tx-in input UTxO... because every txn needs an i/p UTxO, duh)
+    --tx-out addr_test1vp8s8zu6mr73nvlsjf935k0a38n8xvp3fptkyz2vl8pserqkcx5yz+10000000+"1 328a60495759e0d8e244eca5b85b2467d142c8a755d6cd0592dff47b.6d656c636f696e" \
+    --tx-out addr_test1vqvlku0ytscqg32rpv660uu4sgxlje25s5xrpz7zjqsva3c8pfckz+999821915+"999000000 328a60495759e0d8e244eca5b85b2467d142c8a755d6cd0592dff47b.6d656c636f696e" \
+        (tx-out receiving_addr+lovelace_amount+"no_tokens actual_token")
+    --out-file rec_matx.raw
