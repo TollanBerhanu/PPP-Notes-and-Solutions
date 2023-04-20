@@ -1,0 +1,85 @@
+********************************************************************
+Native tokens are explicitly minted or burnt, otherwise they don't exist
+********************************************************************
+Value is attached to a UTxO and can be either (amount_of_lovelace :: Integer) or (token_value :: BuiltinBytestring)
+   * Value is defined in Plutus.V1.Ledger.Value
+   * Value { getValue :: Map CurrencySymbol (Map TokenName Integer) }
+        -> giving nothing and empty bytestring ("") to CurrencySymbol and TokenName respectively, will yield Ada(lovelace)
+        -> i.e adaSymbol :: CurrencySymbol = ,  adaToken :: TokenName = ""
+        -> AssetClass { assetClass :: (CurrencySymbol, TokenName) }
+We can specify that an integer is a lovelace using the function lovelaceValueOf :: Integer -> Value
+    -> E.g., lovelaceValueOf 123 = Value (Map[( ,Map[("", 123)])])
+Value class is an instance of monoid, that means we can combine them using `mappend` or <> in this case
+    -> E.g., lovelaceValueOf 10 <> lovelaceValueOf 20 = Value (Map[( ,Map[("", 30)])])
+
+Now, time for native tokens. We use a function called 'singleton' to create native tokens
+    -> singleton :: CurrencySymbol -> TokenName -> Integer -> Value
+        CurrencySymbol must be a string representing a HEX value. E.g., "0123456789abcdef"
+        TokenName is an arbitrary bytestring. E.g., "MyToken"
+    -> singleton "8ffa" "Token" 5 = Value (Map[(8ffa, Map[("Token", 5)])])
+    -> E.g.,
+        *Prelude Plutus.V1.Ledger.Value> singleton "8ffa" "Tkn1" 15 <> singleton "8ffa" "Tkn1" 20
+        Value (Map [(8ffa,Map [("Tkn1",35)])])
+
+        *Prelude Plutus.V1.Ledger.Value> singleton "8ffa" "Tkn1" 15 <> singleton "8ffb" "Tkn1" 20
+        Value (Map [(8ffa,Map [("Tkn1",15)]),(8ffb,Map [("Tkn1",20)])])
+
+        *Prelude Plutus.V1.Ledger.Value> v = singleton "8ffa" "Tkn1" 15 <> singleton "8ffa" "Tkn2" 20 <> lovelaceValueOf 25
+        Value (Map [( ,Map[("", 25)]), (8ffa,Map [("Tkn1",15),("Tkn2",20)])])
+
+    -> Useful functions: valueOf :: Value -> CurrencySymbol -> TokenName -> Integer 
+                            ... valueOf v "8ffa" "Tkn1" = 15
+                         flattenValue :: Value -> [(CurrencySymbol, TokenName, Integer)] 
+                            ... flattenValue v = [(8ffb,"Tkn2",20),(8ffa,"Tkn1",15),(,"",25)]
+
+Why do we need both CurrencySymbol and TokenName? ... Due to Minting policies
+In general, a txn can't create or delete tokens (what goes in, must come out). 
+The reason CurrencySymbol is made of hexadecimal bytestring is because it is the hash of a script (which is the Minting policy). Each 
+time a txn wants to mint/burn a native token, the CurrencySymbol (Minting policy) is looked up and the corresponding script must be 
+contained in the txn, and that script is executed (along with other validation scripts). 
+
+The purpose of these minting scripts is to validate whether this txn has the right to mint/burn tokens. In the case of lovelace(Ada),
+the CurrencySymbol is empty, which is not the hash of any script (there's no script that allows the minting/burning of Ada)... All the 
+Ada that exist come from the Genesis Block and from monetary expansion (when rewards are paid after each epoch)... but the total amount 
+of Ada in the blockchain is fixed.
+
+********************************* Iteration 4's version
+To construct a value type, we use this function - assetClassValue :: AssetClass -> Integer -> Value
+    -> AssetClass is just a tuple of (CurrencySymbol, TokenName)
+    -> Here, AssetClass is created using this function - assetClass :: CurrencySymbol -> TokenName -> AssetClass
+    -> Value representing 100 Ada ... assetClassValue ada 100000000 = Value (Map [(,Map [("",100000000)])])
+        > let ada = assetClass adaSymbol adaToken 
+        > myAda = assetClassValue ada 100000000
+        > assetClassValueOf myAda ada
+            100000000
+
+Now, let's try this with native tokens
+        > assetClassValue (assetClass "ae24fb53" "MyToken") 45
+            Value (Map [(ae24fb53,Map [("MyToken",45)])])
+        > assetClassValueOf acv (assetClass "ae24fb53" "MyToken") 
+            45
+Because Value is an instance of a Monoid, we can use <> on different Value types to combine them
+        > mempty :: Value
+            Value (Map [])
+    -> we can append two assetClassValue's together using <>
+        > let ac1 = assetClass "ae24fb53" "MyToken"
+        > let acv1 = assetClassValue ac1 45
+        > let acv2 = assetClassValue ac1 20
+        > acv1 <> acv2
+            Value (Map [(ae24fb53,Map [("MyToken",65)])])
+        > let acv3 = assetClassValue (assetClass "ae24fb53" "MyOtherToken") 20
+        > let acv4 = assetClassValue (assetClass "ae24fb537345" "MyToken") 20
+        > acv1 <> acv3
+            Value (Map [(ae24fb53,Map [("MyOtherToken",20),("MyToken",45)])])
+        > acv1 <> acv4
+            Value (Map [(ae24fb53,Map [("MyToken",45)]),(ae24fb537345,Map [("MyToken",20)])])
+    
+    -> We can extract the values from these assetClassValue's using assetClassValueOf
+        > assetClassValueOf (acv1 <> acv2) ac1
+            65
+        > let ada = assetClass adaSymbol adaToken 
+        > myAda = assetClassValue ada 100000000
+        > assetClassValueOf (acv1 <> myAda) ada
+            100000000
+        > assetClassValueOf (acv1 <> myAda) (assetClass "af32" "MadeUp")
+            0
