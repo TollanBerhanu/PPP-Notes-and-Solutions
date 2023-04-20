@@ -60,3 +60,5 @@ validator params = mkValidatorScript ($$(compile [|| mkWrappedParameterizedVesti
 
 saveVal :: VestingParams -> IO ()
 saveVal = writeValidatorToFile "./assets/parameterized-vesting.plutus" . validator
+-- saveVal $ VestingParams "a3hd2ndf8430hf3" 123
+--                     ... beneficiaryPKH ... deadline
