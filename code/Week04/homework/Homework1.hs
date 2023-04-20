@@ -23,6 +23,7 @@ import           Utilities                 (Network, posixTimeFromIso8601,
                                             printDataToJSON,
                                             validatorAddressBech32,
                                             wrapValidator, writeValidatorToFile)
+import Data.Aeson (Value(Bool))
 
 ---------------------------------------------------------------------------------------------------
 ------------------------------------------ PROMPT -------------------------------------------------
@@ -49,22 +50,26 @@ unstableMakeIsData ''MisteryDatum
 {-# INLINABLE mkMisteryValidator #-}
 mkMisteryValidator :: MisteryDatum -> () -> ScriptContext -> Bool
 mkMisteryValidator dat () ctx =
-    traceIfFalse "Benificiary1 did not sign or to late" checkCondition1 ||
-    traceIfFalse "Benificiary2 did not sign or is to early" checkCondition2
+    (traceIfFalse "Benificiary1 did not sign" beneficiary1Signed && traceIfFalse "Too late!" deadlineNotReached) ||
+    (traceIfFalse "Benificiary2 did not sign" beneficiary2Signed && traceIfFalse "Too early!" deadlinePassed)
     where
         txInfo :: TxInfo
         txInfo = scriptContextTxInfo ctx
 
         txValidRange :: POSIXTimeRange
         txValidRange  = txInfoValidRange txInfo
+        
+        beneficiary1Signed :: Bool
+        beneficiary1Signed = txSignedBy txInfo (beneficiary1 dat)
 
-        checkCondition1 :: Bool
-        checkCondition1 = txSignedBy txInfo (beneficiary1 dat) &&
-                          contains (to (deadline dat)) txValidRange
+        deadlineNotReached :: Bool
+        deadlineNotReached = contains (to (deadline dat)) txValidRange
 
-        checkCondition2 :: Bool
-        checkCondition2 = txSignedBy txInfo (beneficiary2 dat) &&
-                          contains (from (1 + deadline dat)) txValidRange
+        beneficiary2Signed :: Bool
+        beneficiary2Signed = txSignedBy txInfo (beneficiary2 dat)
+
+        deadlinePassed :: Bool
+        deadlinePassed = contains (from (1 + deadline dat)) txValidRange
 
 {-# INLINABLE  mkWrappedMisteryValidator #-}
 mkWrappedMisteryValidator :: BuiltinData -> BuiltinData -> BuiltinData -> ()
@@ -77,7 +82,7 @@ validator = mkValidatorScript $$(compile [|| mkWrappedMisteryValidator ||])
 ------------------------------------- HELPER FUNCTIONS --------------------------------------------
 
 saveVal :: IO ()
-saveVal = writeValidatorToFile "./assets/mistery1.plutus" validator
+saveVal = writeValidatorToFile "./assets/mistery11.plutus" validator
 
 misteryAddressBech32 :: Network -> String
 misteryAddressBech32 network = validatorAddressBech32 network validator
