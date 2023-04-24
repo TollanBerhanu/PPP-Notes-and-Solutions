@@ -50,7 +50,7 @@ To construct a value type, we use this function - assetClassValue :: AssetClass 
     -> Value representing 100 Ada ... assetClassValue ada 100000000 = Value (Map [(,Map [("",100000000)])])
         > let ada = assetClass adaSymbol adaToken 
         > myAda = assetClassValue ada 100000000
-        > assetClassValueOf myAda ada
+        > assetClassValueOf myAda ada    ...... assetClassValueOf :: Value -> AssetClass -> Integer
             100000000
 
 Now, let's try this with native tokens
@@ -62,9 +62,9 @@ Because Value is an instance of a Monoid, we can use <> on different Value types
         > mempty :: Value
             Value (Map [])
     -> we can append two assetClassValue's together using <>
-        > let ac1 = assetClass "ae24fb53" "MyToken"
-        > let acv1 = assetClassValue ac1 45
-        > let acv2 = assetClassValue ac1 20
+        > let ac = assetClass "ae24fb53" "MyToken"
+        > let acv1 = assetClassValue ac 45
+        > let acv2 = assetClassValue ac 20
         > acv1 <> acv2
             Value (Map [(ae24fb53,Map [("MyToken",65)])])
         > let acv3 = assetClassValue (assetClass "ae24fb53" "MyOtherToken") 20
@@ -75,7 +75,7 @@ Because Value is an instance of a Monoid, we can use <> on different Value types
             Value (Map [(ae24fb53,Map [("MyToken",45)]),(ae24fb537345,Map [("MyToken",20)])])
     
     -> We can extract the values from these assetClassValue's using assetClassValueOf
-        > assetClassValueOf (acv1 <> acv2) ac1
+        > assetClassValueOf (acv1 <> acv2) ac
             65
         > let ada = assetClass adaSymbol adaToken 
         > myAda = assetClassValue ada 100000000
@@ -83,3 +83,21 @@ Because Value is an instance of a Monoid, we can use <> on different Value types
             100000000
         > assetClassValueOf (acv1 <> myAda) (assetClass "af32" "MadeUp")
             0
+
+****************************** Minting Policy *********************************************
+Recall that a ScriptContext type has two value constructors ... ScriptContext { scriptContextTxInfo  :: TxInfo ,
+                                                                               scriptContextPurpose :: ScriptPurpose  }
+    -> TxInfo has 10 value constructors, one of them is ... TxInfo { txInfoMint :: Value }
+    -> ScriptPurpose has 4 value constructors ... ScriptPurpose { Minting    :: CurrencySymbol ,
+                                                                  Spending   :: TxOutRef , ... Reference to UTxO we want to consume
+                                                                  Rewarding  :: StakingCredential ,
+                                                                  Certifying :: DCert  }
+Monetary policies (minting policies) are triggered of the txInfoMint value is non-zero. Minting policies allow us to create and burn tokens.
+A non-zero txInfoMint contains one or more different AssetClass(es)... AssetClass :: (CurrencySymbol, TokenName) -> AssetClass
+Non-zero (txInfoMint :: Value) means a non-empty Value .. mempty :: Value = Value (Map []) and the amount mapped to the TokenName is non-zero
+    -> Every MintingPolicy corresponding to the CurrencySymbol (Minting policy script hash) is run
+    -> Minting policies only have 2 inputs (redeemer and context) ... datum only sits on sth that can be spent
+    -> For each CurrencySymbol, the corresponding minting policy script will run with the redeemer and the context (In this case, the
+        ScriptPurpose will be Minting :: CurrencySymbol ... the CurrencySymbol corresponding to the hash of the minting script being run)
+    -> There may be several minting policies being involved in one txn, if we mint currency of different CurrencySymbols in the txn and all
+        the minting policies should be executed and all should pass for the txn to succeed.
