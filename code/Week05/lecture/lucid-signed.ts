@@ -20,10 +20,10 @@ function readAmount(): bigint {
 // set blockfrost endpoint
 const lucid = await Lucid.new(
     new Blockfrost(
-        "https://cardano-preprod.blockfrost.io/api/v0",
+        "https://cardano-preview.blockfrost.io/api/v0",
         blockfrostKey
     ),
-    "Preprod"
+    "Preview"
 );
 
 // load local stored seed as a wallet into lucid
