@@ -92,7 +92,7 @@ Recall that a ScriptContext type has two value constructors ... ScriptContext { 
                                                                   Spending   :: TxOutRef , ... Reference to UTxO we want to consume
                                                                   Rewarding  :: StakingCredential ,
                                                                   Certifying :: DCert  }
-Monetary policies (minting policies) are triggered of the txInfoMint value is non-zero. Minting policies allow us to create and burn tokens.
+Monetary policies (minting policies) are executed of the txInfoMint value is non-zero. Minting policies allow us to create and burn tokens.
 A non-zero txInfoMint contains one or more different AssetClass(es)... AssetClass :: (CurrencySymbol, TokenName) -> AssetClass
 Non-zero (txInfoMint :: Value) means a non-empty Value .. mempty :: Value = Value (Map []) and the amount mapped to the TokenName is non-zero
     -> Every MintingPolicy corresponding to the CurrencySymbol (Minting policy script hash) is run
@@ -101,3 +101,11 @@ Non-zero (txInfoMint :: Value) means a non-empty Value .. mempty :: Value = Valu
         ScriptPurpose will be Minting :: CurrencySymbol ... the CurrencySymbol corresponding to the hash of the minting script being run)
     -> There may be several minting policies being involved in one txn, if we mint currency of different CurrencySymbols in the txn and all
         the minting policies should be executed and all should pass for the txn to succeed.
+    
+****************************** NFTs *********************************************
+NFTs are tokens which can only be minted once. If you know the policy script of an NFT that corresponds to the CurrencySymbol, you can be
+sure that only one token exists on the blockchain. This is achieved using UTxOs because every UTxO is unique. Even if multiple UTxOs belong
+to one address and have the same datum, they are differentiated by txn hash they came from and their index. Also, txns are unique because
+every txn must have an input UTxO (o/p of a previous txn), to cover for fees.
+Our minting policy will take a specific UTxO as a parameter and the txn that does the minting of the NFT must consume the UTxO to make sure
+that the same minting policy can't be used to mint another NFT.
