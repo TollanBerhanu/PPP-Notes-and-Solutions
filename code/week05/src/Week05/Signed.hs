@@ -32,9 +32,11 @@ import           Prelude                (IO, Show (..), String)
 import           Text.Printf            (printf)
 import           Wallet.Emulator.Wallet
 
+-- ======================== ON-CHAIN CODE ==========================
+
 {-# INLINABLE mkPolicy #-}
 mkPolicy :: PaymentPubKeyHash -> () -> ScriptContext -> Bool
-mkPolicy pkh () ctx = txSignedBy (scriptContextTxInfo ctx) $ unPaymentPubKeyHash pkh
+mkPolicy pkh () ctx = txSignedBy (scriptContextTxInfo ctx) $ unPaymentPubKeyHash pkh -- unPaymentPubKeyHash :: PaymentPub.. -> PubKeyHash
 
 policy :: PaymentPubKeyHash -> Scripts.MintingPolicy
 policy pkh = mkMintingPolicyScript $
@@ -45,6 +47,7 @@ policy pkh = mkMintingPolicyScript $
 curSymbol :: PaymentPubKeyHash -> CurrencySymbol
 curSymbol = scriptCurrencySymbol . policy
 
+-- ======================== OFF-CHAIN CODE ==========================
 data MintParams = MintParams
     { mpTokenName :: !TokenName
     , mpAmount    :: !Integer
@@ -54,7 +57,7 @@ type FreeSchema = Endpoint "mint" MintParams
 
 mint :: MintParams -> Contract w FreeSchema Text ()
 mint mp = do
-    pkh <- Contract.ownPaymentPubKeyHash
+    pkh <- Contract.ownPaymentPubKeyHash -- get the pubKeyHash of the wallet trying to mint/burn tokens
     let val     = Value.singleton (curSymbol pkh) (mpTokenName mp) (mpAmount mp)
         lookups = Constraints.mintingPolicy $ policy pkh
         tx      = Constraints.mustMintValue val
