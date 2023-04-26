@@ -2,6 +2,7 @@ import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './bootstrap-datetimepicker.min.css';
 import * as L from 'lucid-cardano';
+import { blockfrostApiKey } from './blockfrost_api_key';
 
 const vestingScript = { // This is the serealized script
     type: "PlutusV2",
@@ -27,7 +28,7 @@ async function loadCardano() { // To connect lucid to the nami wallet
         const api = await nami.enable();
         console.log('nami enabled');
         const lucid = await L.Lucid.new( // We need a blockfrost api key to get access to the blockchain network (preview testnet)
-            new L.Blockfrost("https://cardano-preview.blockfrost.io/api/v0", "previewTboSqp1nB894P6wgrGA1PBv8rgUvIS5v"),
+            new L.Blockfrost("https://cardano-preview.blockfrost.io/api/v0", blockfrostApiKey),
             "Preview",
         );
         console.log('lucid active');
