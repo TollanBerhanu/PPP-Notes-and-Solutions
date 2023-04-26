@@ -14,7 +14,7 @@ import qualified PlutusTx
 import           PlutusTx.Prelude     (Bool (False), ($), (&&), traceIfFalse)
 import           Prelude              (IO, Show (show))
 import           Text.Printf          (printf)
-import           Utilities            (wrapPolicy, writeCodeToFile)
+import           Utilities            (wrapPolicy, writeCodeToFile, writePolicyToFile)
 
 {-# INLINABLE mkDeadlinePolicy #-}
 -- This policy should only allow minting (or burning) of tokens if the owner of the specified PubKeyHash
@@ -30,7 +30,7 @@ mkDeadlinePolicy _pkh _deadline () _ctx = traceIfFalse "Owner hasn't signed" own
         ownerSigned = txSignedBy info _pkh
 
         deadlineNotReached :: Bool
-        deadlineNotReached = _deadline `after` (txInfoValidRange info) 
+        deadlineNotReached = _deadline `after` txInfoValidRange info
 
 -- ====== This is the way to apply the arguments off-chain
 
@@ -44,19 +44,19 @@ deadlineCode = $$(PlutusTx.compile [|| mkWrappedDeadlinePolicy ||])
 saveDeadlineCode :: IO ()
 saveDeadlineCode = writeCodeToFile "assets/deadline.plutus" deadlineCode
 
-{- 
+
 -- ====== This is the way to apply the arguments on-chain
+{-
+{-# INLINABLE mkWrappedDeadlinePolicy #-}
+mkWrappedDeadlinePolicy :: PubKeyHash -> POSIXTime -> BuiltinData -> BuiltinData -> ()
+mkWrappedDeadlinePolicy pkh deadline = wrapPolicy $ mkDeadlinePolicy pkh deadline
 
-    {-# INLINABLE mkWrappedDeadlinePolicy #-}
-    mkWrappedDeadlinePolicy :: PubKeyHash -> POSIXTime -> BuiltinData -> BuiltinData -> ()
-    mkWrappedDeadlinePolicy pkh deadline = wrapPolicy $ mkDeadlinePolicy pkh deadline
+deadlinePolicy :: PubKeyHash -> POSIXTime -> MintingPolicy
+deadlinePolicy pkh deadline = mkMintingPolicyScript $
+    $$(PlutusTx.compile [|| mkWrappedDeadlinePolicy ||])
+        `PlutusTx.applyCode` PlutusTx.liftCode pkh
+        `PlutusTx.applyCode` PlutusTx.liftCode deadline
 
-    deadlinePolicy :: PubKeyHash -> POSIXTime -> MintingPolicy
-    deadlinePolicy pkh deadline = mkMintingPolicyScript $
-        $$(PlutusTx.compile [|| mkWrappedDeadlinePolicy ||])
-            `PlutusTx.applyCode` PlutusTx.liftCode pkh
-            `PlutusTx.applyCode` PlutusTx.liftCode deadline
-
-    saveDeadlinePolicy :: PubKeyHash -> POSIXTime -> IO ()
-    saveDeadlinePolicy pkh deadline = writePolicyToFile (printf "assets/deadline-%s.plutus" $ show pkh) $ deadlinePolicy pkh deadline
+saveDeadlinePolicy :: PubKeyHash -> POSIXTime -> IO ()
+saveDeadlinePolicy pkh deadline = writePolicyToFile (printf "assets/deadline-%s.plutus" $ show pkh) $ deadlinePolicy pkh deadline
 -}

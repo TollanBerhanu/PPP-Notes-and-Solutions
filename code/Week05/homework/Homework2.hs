@@ -7,7 +7,7 @@ module Homework2 where
 
 import           Plutus.V1.Ledger.Value     (flattenValue)
 import           Plutus.V2.Ledger.Api       (BuiltinData, MintingPolicy,
-                                            ScriptContext(scriptContextTxInfo), TokenName(TokenName), TxOutRef,
+                                            ScriptContext(scriptContextTxInfo), TokenName(TokenName), unTokenName, TxOutRef,
                                             mkMintingPolicyScript, TxInfo(txInfoInputs, txInfoMint),
                                             TxInInfo (txInInfoOutRef), TxOutRef (TxOutRef), TxId(TxId))
 import           Prelude                    (IO)                                             
@@ -30,8 +30,8 @@ mkEmptyNFTPolicy _oref () _ctx = traceIfFalse "Missing UTxO" hasUTxO && -- FIX M
 
         checkMintedAmount :: Bool 
         checkMintedAmount = case flattenValue (txInfoMint info) of   -- flattenValue :: Value -> [(CurrencySymbol, TokenName, Integer)]
-            [(_, _, amt)] -> amt == 1  -- check if the TokenName is the same and if the amount is 1
-            _                -> False 
+            [(_, tn, amt)] -> unTokenName tn == "" && amt == 1  -- check if the TokenName is the same and if the amount is 1
+            _              -> False 
 
 {-# INLINABLE mkWrappedEmptyNFTPolicy #-}
                          -- TxId -> Idx -> BuiltinData -> BuiltinData -> ()
