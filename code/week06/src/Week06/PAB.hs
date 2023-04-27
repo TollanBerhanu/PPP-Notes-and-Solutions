@@ -29,14 +29,21 @@ instance HasDefinitions TokenContracts where
 
     getDefinitions        = [Mint exampleTP, Monitor exampleAddr]
 
+    -- getContract is used to define which Contract to run given a value of some type (in this case: Mint Token.TokenParams | Monitor Address)
+        -- Notice that Token and Monitor are modules imported from this week's folder
     getContract (Mint tp)      = SomeBuiltin $ Token.mintToken @() @Empty tp
     getContract (Monitor addr) = SomeBuiltin $ Monitor.monitor addr
 
-    getSchema = const $ endpointsToSchemas @Empty
+    getSchema = const $ endpointsToSchemas @Empty -- provide the schema for values of the above types
+        -- we also could have done this, but we can write it in one line as above because both can be @Empty
+    -- getSchema (Mint _) = endpointsToSchemas @Empty
+    -- getSchema (Monitor _) = endpointsToSchemas @Empty
 
+-- This is an example address we use above
 exampleAddr :: Address
 exampleAddr = mockWalletAddress $ knownWallet 1
 
+-- This are example TokenParams we use above
 exampleTP :: Token.TokenParams
 exampleTP = Token.TokenParams
     { Token.tpAddress = exampleAddr

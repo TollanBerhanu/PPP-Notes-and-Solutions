@@ -1,4 +1,5 @@
 #!/bin/bash
+# to mint a token using curl while the PAB is running
 
 amt=$1
 tn=$2

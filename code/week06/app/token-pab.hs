@@ -15,6 +15,7 @@ import           Plutus.PAB.Run                      (runWith)
 
 import           Week06.PAB                          (TokenContracts)
 
+-- This will start the Plutus Application Backend (PAB) with the contracts imported (Mint and Monitor)
 main :: IO ()
 main = do
     runWith (Builtin.handleBuiltin @TokenContracts)

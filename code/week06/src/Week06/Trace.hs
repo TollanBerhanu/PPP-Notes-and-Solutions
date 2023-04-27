@@ -21,6 +21,7 @@ import           Wallet.Emulator.Wallet
 
 import           Week06.Token.OffChain
 
+-- This emulator trace tests the Token/OffChain.hs module 
 testToken :: IO ()
 testToken = runEmulatorTraceIO tokenTrace
 
