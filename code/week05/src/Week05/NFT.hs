@@ -32,7 +32,7 @@ import           Wallet.Emulator.Wallet
 
 -- ============================== On-Chain code ======================================
 
-{-# INLINABLE mkPolicy #-}
+{-# INLINABLE mkPolicy #-}      -- TxOutRef txOutRefId txOutRefIdx
 mkPolicy :: TxOutRef -> TokenName -> () -> ScriptContext -> Bool
 mkPolicy oref tn () ctx = traceIfFalse "UTxO not consumed"   hasUTxO           &&
                           traceIfFalse "wrong amount minted" checkMintedAmount
