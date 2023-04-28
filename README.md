@@ -63,6 +63,47 @@ This documentation looks better in GitBook at the following link:
 - [NFT's](https://youtu.be/9kW-z_RuwEY)
 - [Homework](https://youtu.be/nQC_GNPIRT8)
 
+### [Lecture 6](https://www.youtube.com/playlist?list=PLNEK_Ejlx3x08fHgl_ZTlowVO8bjqITEh)
+
+- [The State Monad in practice](https://www.youtube.com/watch?v=8tWzG0ML6Z4&list=PLNEK_Ejlx3x08fHgl_ZTlowVO8bjqITEh&index=1)
+- [Introduction to the Plutus Simple Model library](https://youtu.be/Sft02LeXA_U)
+- [Unit Testing a Smart Contract](https://youtu.be/vB8hyVq3HVo)
+- [Property Testing a Smart Contract](https://youtu.be/pF8HpKmaQi4)
+- [Testing Smart Contracts with Lucid](https://youtu.be/aUrIuDQgg5c)
+- [Double Spending and Homework](https://youtu.be/AZVpkwRhEaY)
+
+### [Lecture 7](https://www.youtube.com/playlist?list=PLNEK_Ejlx3x0wH_y1lQp4xtrkuaYSWi6V)
+
+- [Introduction](https://youtu.be/KCWuj2DXEY4)
+- [Marlowe Playground Demo](https://youtu.be/fldaBHmYfqk)
+- [Homework](https://youtu.be/C4WWnQZOAAM)
+- [Marlowe Starter Kit: Docker](https://youtu.be/wgSvPlWUrf8)
+- [Marlowe Starter Kit: Preliminaries](https://youtu.be/hGBmj9ZrYHs)
+- [Marlowe Starter Kit: ZCB using the Marlowe Runtime command-line client](https://youtu.be/pjDtuD5rimI)
+- [Marlowe Starter Kit: ZCB using the Marlowe Runtime REST API](https://youtu.be/wgJVdkM2pBY)
+- [Marlowe Starter Kit: ZCB using the Marlowe Runtime CLI](https://youtu.be/ELc72BKf7ec)
+- [Marlowe Starter Kit: Escrow using the Marlowe Runtime's REST API](https://youtu.be/E8m-PKbS9TI)
+- [Marlowe Starter Kit: Swap contract using the Marlowe Runtime's REST API](https://youtu.be/sSrVCRNoytU)
+
+### [Lecture 8](https://www.youtube.com/playlist?list=PLNEK_Ejlx3x09VdtQTw_UpxUa0bRcrVPI)
+
+- [Introduction](https://youtu.be/07ATzubeHjo)
+- [The Private Testnet](https://youtu.be/BBqOZAuMx1c)
+- [Plutus & Staking](https://youtu.be/1Hs6bU9pXi4)
+- [Trying it on the Testnet](https://youtu.be/fzYXwdrfu44)
+- [Homework](https://youtu.be/rO3FVGsuzUg)
+
+### [Lecture 9](https://www.youtube.com/playlist?list=PLNEK_Ejlx3x3ZWTpR5lhoVs_DHkebiBcU)
+
+- [Creating our own Stablecoin Dapp](https://youtu.be/KDzyMy0WN9M)
+- [Using our Stablecoin UI](https://youtu.be/MVq51lZkutA)
+- [Stablecoin's Oracle](https://youtu.be/XfbEsFPbzCI)
+- [Deploying Stablecoin's Reference scripts](https://youtu.be/AokRj-upwlY)
+- [Minting Stablecoins](https://youtu.be/mUa9sztfPKs)
+- [Burning Stablecoins and Liquidating positions](https://youtu.be/u2cUeD72MrQ)
+- [Testing our Stablecoin's scripts](https://youtu.be/-MBebK33FOU)
+- [Homework](https://youtu.be/yfmLaLcDjtc)
+
 ## Repository Structure
 
 The most relevant directories of this repository are structured as follows:
