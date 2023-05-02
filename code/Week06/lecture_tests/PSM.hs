@@ -23,11 +23,11 @@ main = defaultMain $ do
       , bad  "Not enough funds" notEnoughFunds  -- bad "description" actual_test (user_1 sends an amound exceeding his funds to user_2 ... txn should fail)
       ]
       where
-        bad msg = good msg . mustFail   -- Test will pass if 'notEnoughFunds' returns (Run False)
+        bad msg = good msg . mustFail   -- Test will pass if 'notEnoughFunds' returns (Run False) or if the txn fails
           -- mustFail :: Plutus.Model.Run a -> Plutus.Model.Run ()
         good = testNoErrors (adaValue 10_000_000) defaultBabbage
           -- testNoErrors :: Plutus.V1.Ledger.Value.Value -> MockConfig -> String -> Plutus.Model.Run a -> tasty-1.4.2.3:Test.Tasty.Core.TestTree
-              -- adaValue :: Integer -> Plutus.V1.Ledger.Value.Value
+              -- adaValue :: Integer -> Plutus.V1.Ledger.Value.Value    -- Initial ada value of admin (one that gives funds to users)
               -- defaultBabbage :: MockConfig  ... this is a configuration of our mock blockchain
 
 ---------------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ main = defaultMain $ do
 -- newtype Run a = Run (State Mock a)
 --     deriving (Functor, Applicative, Monad, MonadState Mock)
 
--- Set many users at once (in this case set 3 users each having 1000 lovelace ... 1000 lovaelace is transferred to the users initially)
+-- Set many users at once (in this case set 3 users each having 1000 lovelace ... 1000 lovaelace is transferred to the users from the admin initially)
 setupUsers :: Run [PubKeyHash]
 setupUsers = replicateM 3 $ newUser $ ada (Lovelace 1000)   -- newUser :: Value -> Plutus.Model.Run Plutus.V1.Ledger.Crypto.PubKeyHash
 
