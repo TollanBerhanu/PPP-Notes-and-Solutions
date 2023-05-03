@@ -44,7 +44,7 @@ main = defaultMain $ do
 
 waitBeforeConsumingTx :: POSIXTime
 waitBeforeConsumingTx = 1000    -- We hardcode the POSIX Time we wait before trying to consume the UTxO 
-                                  -- Its the time we consume the UTxO because we start at 0
+                                  -- This is actually the time we consume the UTxO because we start at 0
 
 -- Set many users at once
 setupUsers :: Run [PubKeyHash]
@@ -61,7 +61,7 @@ lockingTx :: POSIXTime -> UserSpend -> Value -> Tx
 lockingTx dl usp val =
   mconcat       -- 'mconcat' takes a list of Monoid values (individual txns) and concatenates them 
     [ userSpend usp       -- userSpend :: UserSpend -> Tx 
-        -- specify everything the user spends (the UTxOs consumed) to create the txn (we extract the Tx from UserSpend)
+        -- specify everything the user spends (all the input UTxOs consumed) to create the txn (we extract the Tx from UserSpend)
     , payToScript valScript (HashDatum (OnChain.MkCustomDatum dl)) val    -- payToScript :: script -> DatumMode (DatumType script) -> Value -> Tx
                       --  newtype CustomDatum = MkCustomDatum { deadline :: POSIXTime } ... defined in lecture/NegativeRTimed.hs
         -- create the txn to pay to the script, with the datum (it's hashed in this case) and the Value we send

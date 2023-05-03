@@ -37,6 +37,7 @@ library
     exposed-modules:    State
                         NegativeRTimed
                         ExploitableSwap
+                        UnExploitableSwap
 
 
 test-suite week06-PSM
