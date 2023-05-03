@@ -7,23 +7,21 @@ const negativeRTimedValidator: L.SpendingValidator = {
   type: "PlutusV2",
   script: "590a8f590a8c010000323322323232323322323232323232323233223232323232323232333222323232232223232533532323253355335333573466e24009200002902815335323232350022235002223500522350022253335333501600b00600215335001153350051333501500b00300710331333501500b00300710331333501500b0030073535003220022222222222220053350113350133502400402a335012502302a123333333300122333573466e1c0080040b00ac894cd4ccd5cd19b8700200102c02b101215335333573466e240080040b00ac4040404488ccd5cd19b8800200102c02b22333573466e240080040b00ac88ccd5cd19b8900200102b02c22333573466e200080040ac0b0894cd4ccd5cd19b8900200102c02b10011002225335333573466e240080040b00ac4008400440a44cd5ce248114646561646c696e65206e6f7420726561636865640002810281029133573892011c65787065637465642061206e656761746976652072656465656d6572000283333573466e1cd55cea80224000466442466002006004646464646464646464646464646666ae68cdc39aab9d500c480008cccccccccccc88888888888848cccccccccccc00403403002c02802402001c01801401000c008cd4084088d5d0a80619a8108111aba1500b33502102335742a014666aa04aeb94090d5d0a804999aa812bae502435742a01066a0420586ae85401cccd540940b5d69aba150063232323333573466e1cd55cea80124000466a0446464646666ae68cdc39aab9d5002480008cd40a0cd40ddd69aba15002303a357426ae8940088c98c80f0cd5ce01e81e01d09aab9e5001137540026ae854008c8c8c8cccd5cd19b8735573aa0049000119a81399a81bbad35742a00460746ae84d5d1280111931901e19ab9c03d03c03a135573ca00226ea8004d5d09aba2500223263203833573807207006c26aae7940044dd50009aba1500533502175c6ae854010ccd540940a48004d5d0a801999aa812bae200135742a00460566ae84d5d1280111931901a19ab9c035034032135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d5d1280089aba25001135744a00226ae8940044d55cf280089baa00135742a00860366ae84d5d1280211931901319ab9c027026024375a00a6666ae68cdc39aab9d5005480008dd69aba135573ca00c464c6404866ae70094090088408c4c98c808ccd5ce2490350543500023135573ca00226ea80044dd500089111a801111a801912999a999a8040038020010a99a80188008813081288130911191919192999a80310a999a80310a999a80410980224c26006930a999a80390980224c2600693080688058a999a80390980224c26006930a999a80310980224c260069308060a999a80290805080588048a999a80290a999a803909802a4c26008930a999a803109802a4c2600893080608050a999a803109802a4c26008930a999a802909802a4c2600893080592999a80290a999a80390a999a80390999a8058050010008b0b0b08058a999a80310a999a80310999a8050048010008b0b0b0805080492999a80210a999a80310a999a80310999a8050048010008b0b0b08050a999a80290a999a80290999a8048040010008b0b0b0804880412999a80190a999a80290a999a80290999a8048040010008b0b0b08048a999a80210a999a80210999a8040038010008b0b0b0804080392999a80110a999a80210a999a80210999a8040038010008b0b0b08040a999a80190a999a80190999a8038030010008b0b0b08038803091a800911111110038911001891100109110008910919800801801091091980080180109109198008018010919118011bac001320013550182233335573e0024a014466a01260086ae84008c00cd5d100100b119191999ab9a3370e6aae7540092000233221233001003002300c35742a004600a6ae84d5d1280111931900b19ab9c017016014135573ca00226ea80048c8c8c8c8cccd5cd19b8735573aa00890001199991110919998008028020018011919191999ab9a3370e6aae7540092000233221233001003002301535742a00466a01e0286ae84d5d1280111931900d99ab9c01c01b019135573ca00226ea8004d5d0a802199aa8043ae500735742a0066464646666ae68cdc3a800a4008464244460040086ae84d55cf280191999ab9a3370ea0049001119091118008021bae357426aae7940108cccd5cd19b875003480008488800c8c98c8074cd5ce00f00e80d80d00c89aab9d5001137540026ae854008cd402dd71aba135744a004464c6402e66ae7006005c0544d5d1280089aba25001135573ca00226ea80044cd54005d73ad112232230023756002640026aa02a44646666aae7c008940208cd401ccc8848cc00400c008c018d55cea80118029aab9e500230043574400602826ae840044488008488488cc00401000c488c8c8cccd5cd19b875001480008c8488c00800cc014d5d09aab9e500323333573466e1d40092002212200123263201233573802602402001e26aae7540044dd5000919191999ab9a3370ea002900311909111180200298039aba135573ca00646666ae68cdc3a8012400846424444600400a60126ae84d55cf280211999ab9a3370ea006900111909111180080298039aba135573ca00a46666ae68cdc3a8022400046424444600600a6eb8d5d09aab9e500623263201233573802602402001e01c01a26aae7540044dd5000919191999ab9a3370e6aae7540092000233221233001003002300535742a0046eb4d5d09aba2500223263200e33573801e01c01826aae7940044dd50009191999ab9a3370e6aae75400520002375c6ae84d55cf280111931900619ab9c00d00c00a13754002464646464646666ae68cdc3a800a401842444444400646666ae68cdc3a8012401442444444400846666ae68cdc3a801a40104664424444444660020120106eb8d5d0a8029bad357426ae8940148cccd5cd19b875004480188cc8848888888cc008024020dd71aba15007375c6ae84d5d1280391999ab9a3370ea00a900211991091111111980300480418061aba15009375c6ae84d5d1280491999ab9a3370ea00c900111909111111180380418069aba135573ca01646666ae68cdc3a803a400046424444444600a010601c6ae84d55cf280611931900a99ab9c01601501301201101000f00e00d135573aa00826aae79400c4d55cf280109aab9e5001137540024646464646666ae68cdc3a800a4004466644424466600200a0080066eb4d5d0a8021bad35742a0066eb4d5d09aba2500323333573466e1d4009200023212230020033008357426aae7940188c98c8038cd5ce00780700600589aab9d5003135744a00226aae7940044dd5000919191999ab9a3370ea002900111909118008019bae357426aae79400c8cccd5cd19b875002480008c8488c00800cdd71aba135573ca008464c6401666ae7003002c0240204d55cea80089baa00112232323333573466e1d400520042500623333573466e1d400920022350083006357426aae7940108cccd5cd19b87500348000848880088c98c8030cd5ce00680600500480409aab9d5001137540022424446006008224440024646666ae68cdc3a800a4004401046666ae68cdc3a801240004010464c6400c66ae7001c01801000c4d55ce9baa0014984800524010350543100122002122001112323001001223300330020020011",
 };
+// Get the address of the script
+// Lucid.new(provider?: Provider, network?: Network): Promise<Lucid>       E.g., new(Blockfrost..., Preview)
 const negativeRTimedAddr: L.Address = await (await L.Lucid.new(undefined, "Custom")).utils.validatorToAddress(negativeRTimedValidator);
 
 // the typed datum and redeemer that we are going to use.
-const NegativeRTimedDatum = L.Data.Object({
+const NegativeRTimedDatum = L.Data.Object({   // The datum is just a wrapper around an Integer deadline
   deadline: L.Data.Integer()
 });
 type NegativeRTimedDatum = L.Data.Static<typeof NegativeRTimedDatum>;
 
-const NegativeRTimedRedeemer = L.Data.Integer();
+const NegativeRTimedRedeemer = L.Data.Integer();  // The redeemer is just an integer
 type NegativeRTimedRedeemer = L.Data.Static<typeof NegativeRTimedRedeemer>;
 
 // the function that given the context of lucid, the wallet,the datum and sends 10 ada to the script address.
-async function sendToScript(
-    lucid: L.Lucid,
-    userPrivKey: L.PrivateKey,
-    dtm: NegativeRTimedDatum
-  ): Promise<L.TxHash> {
+async function sendToScript(lucid: L.Lucid, userPrivKey: L.PrivateKey, dtm: NegativeRTimedDatum): Promise<L.TxHash> {
   lucid.selectWalletFromPrivateKey(userPrivKey);
   const tx = await lucid
     .newTx()
@@ -35,24 +33,18 @@ async function sendToScript(
 }
 
 // the function that given the context of lucid and a negative redeemer, grabs funds from the script address.
-async function grabFunds(
-    lucid: L.Lucid,
-    emulator: L.Emulator,
-    userPrivKey: L.PrivateKey,
-    dtm: NegativeRTimedDatum,
-    r: NegativeRTimedRedeemer
-  ): Promise<L.TxHash> {
+async function grabFunds(lucid: L.Lucid, emulator: L.Emulator, userPrivKey: L.PrivateKey, dtm: NegativeRTimedDatum, r: NegativeRTimedRedeemer): Promise<L.TxHash> {
   lucid.selectWalletFromPrivateKey(userPrivKey);
-  const rdm: L.Redeemer = L.Data.to<NegativeRTimedRedeemer>(r,NegativeRTimedRedeemer);
-  const utxoAtScript: L.UTxO[] = await lucid.utxosAt(negativeRTimedAddr);
-  const ourUTxO: L.UTxO[] = utxoAtScript.filter((utxo) => utxo.datum == L.Data.to<NegativeRTimedDatum>(dtm,NegativeRTimedDatum));
+  const rdm: L.Redeemer = L.Data.to<NegativeRTimedRedeemer>(r,NegativeRTimedRedeemer); // This converts the redeemer to cbor encoded string
+  const utxoAtScript: L.UTxO[] = await lucid.utxosAt(negativeRTimedAddr); // Fetches all UTxOs at the script address in the mock blockchain
+  const ourUTxO: L.UTxO[] = utxoAtScript.filter((utxo) => utxo.datum == L.Data.to<NegativeRTimedDatum>(dtm,NegativeRTimedDatum)); // Filter the UTxOs by the datum
   
   if (ourUTxO && ourUTxO.length > 0) {
       const tx = await lucid
           .newTx()
-          .collectFrom(ourUTxO, rdm)
+          .collectFrom(ourUTxO, rdm)  // Construct a txn that collects from all the UTxOs
           .attachSpendingValidator(negativeRTimedValidator)
-          .validFrom(emulator.now())
+          .validFrom(emulator.now()) // Fethes the current POSIX time of the emulator and attaches it to the txn
           .complete();
 
       const signedTx = await tx.sign().complete();
@@ -62,6 +54,7 @@ async function grabFunds(
   else throw new Error("UTxO's Expected!")
 }
 
+                      // Datum                    Redeemer                  Slot number in which the grab function is initiated
 async function runTest(dtm: NegativeRTimedDatum, r: NegativeRTimedRedeemer, n: number) {
   // setup a new privateKey that we can use for testing.
   const user1: L.PrivateKey = L.generatePrivateKey();
@@ -69,10 +62,13 @@ async function runTest(dtm: NegativeRTimedDatum, r: NegativeRTimedRedeemer, n: n
 
   const user2: L.PrivateKey = L.generatePrivateKey();
   const address2: string = await (await L.Lucid.new(undefined, "Custom")).selectWalletFromPrivateKey(user2).wallet.address();
-
+ 
   // Setup the emulator and give our testing wallet 10000 ada. These funds get added to the genesis block.
   const emulator = new L.Emulator([{ address: address1, assets: { lovelace: 10000000000n } }, { address: address2, assets: { lovelace: 10000000000n}}]);
+    // We give it a list of outputs that we want to create at the genesis block when the emulator runs (In this case we want to fund the two users 10,000 ADA)
+
   const lucid = await L.Lucid.new(emulator);
+    // We finally initiate lucid here (notice that we've been awaiting while we generate the addresses, instead of initiating lucid there)
 
   // gets added to the first block in the emulator
   await sendToScript(lucid,user1,dtm);
@@ -85,36 +81,45 @@ async function runTest(dtm: NegativeRTimedDatum, r: NegativeRTimedRedeemer, n: n
 
   emulator.awaitBlock(10);
 
-  //console.log(await emulator.getUtxos(address2));
+  // ******************************* Log the final amont of lovelace of user 2
+  // console.log(await emulator.getUtxos(address2));
 }
-//await runTest({deadline:BigInt(Date.now()+20000*5+1000)},-42n,5*20);
 
-// UNIT tests
+/************************************************  Run the emulator  **************************************************************************/
+// await runTest({deadline:BigInt(Date.now()+20000*5+1000)},-42n,5*20+1);
+        // Datum (Deadline) : Now + 5 * 20sec + 1 sec  (the deadline is set to five blocks + one slot since the emulator initiates and our mock blockchain is created)
+        // Redeemer : negative value
+        // Slot we call grab : 5 slots after we initiate the emulator (+1 is added to just pass the deadline)
 
+
+//  ================ UNIT tests ==============
+
+// These are tests we expect to succeed
 function testSucceed(
-  str: string, // the string to display of the test
-  r: bigint,   // the redeemer number
-  d: bigint,   // the deadline in seconds from now
-  n:number     // the number of slots user 2 waits
-) {
+      str: string, // the string to display of the test
+      r: bigint,   // the redeemer number
+      d: bigint,   // the deadline in seconds from now
+      n:number     // the number of slots user 2 waits
+    ) {
   Deno.test(str, async () => {await runTest({deadline:BigInt(Date.now())+d},r,n)})
 }
 
+// These are tests we expect to fail
 async function testFails(
-  str: string, // the string to display of the test
-  r: bigint,   // the redeemer number
-  d: bigint,   // the deadline in seconds from now
-  n:number     // the number of slots user 2 waits
-) {
+      str: string, // the string to display of the test
+      r: bigint,   // the redeemer number
+      d: bigint,   // the deadline in seconds from now
+      n:number     // the number of slots user 2 waits
+    ) {
   Deno.test(str,async () => {
     let errorThrown = false;
     try {
       await runTest({deadline:BigInt(Date.now())+d},r,n);
-    } catch (error) {
+    } catch (error) {     // We expect this to fail, so we need to catch the error
       errorThrown = true;
     }
-    assert(
-      errorThrown,
+    assert(           // Make an assertion, error will be thrown if expr does not have truthy value.
+      errorThrown,    // This has to be true to succeed
       "Expected to throw an error, but it completed successfully"
     );
   });
@@ -133,25 +138,32 @@ testFails("UT: User 1 locks and user 2 takes with R = 0 before dealine; fails",-
 // deadline is slot 100 and user 2 claims at slot 80
 testFails("UT: User 1 locks and user 2 takes with R = 42 before dealine; fails",42n,BigInt(1000*100),80);
 
-// Property test
+// ****************** We run these tests using this command:  deno test -A lecture_tests/NegativeRTimed.ts 
+
+// ========================== Property test ========================
+
+    // *** Here we define / generate the constants we need to run property tests
+
 // set up a fixed deadline at slot 100
 const dl: number = 100*1000;
-// create only random 256 bit negative big integers for r.
+// generate only random 256 bit negative big integers or zero for r. 
 const negativeBigIntArbitrary = fc.bigIntN(256).filter((n:bigint) => n <= 0n);
-// create only random 256 bit positive big integers for r.
+// generate only random 256 bit positive big integers for r.
 const positiveBigIntArbitrary = fc.bigIntN(256).filter((n:bigint) => n > 0n); 
-// create only random integers that represent claiming after the deadline
+// generate only random integers that represent consuming after the deadline
 const afterDeadlineWaits = fc.integer().filter((n: number) => n >= dl);
-// create only random integers that represent claiming before the deadline
+// generate only random integers that represent consuming before the deadline
 const beforeDeadlineWaits = fc.integer().filter((n: number) => n < dl);
 
+// Property tests are written using the fastcheck library imported as 'fc'
+//        Name of the test,       actual test to be run
 Deno.test("PT: Negative redeemer after deadline always succeeds", () => {
-  fc.assert(fc.asyncProperty(
-    negativeBigIntArbitrary, afterDeadlineWaits, async (r: bigint,n: number) => {
-      try {
+  // fastcheck.assert (property, number_of_runs)
+  fc.assert (fc.asyncProperty(negativeBigIntArbitrary, afterDeadlineWaits, async (r: bigint,n: number) => { //we run the above test with generated negativeRedeemers
+      try {                                                                                                             // and reached deadline (should always pass)
         await runTest({deadline:BigInt(Date.now()+dl)},r,n);
       } catch (error) {
-        console.error('Test failed for r= '+ r +' with error: ' + error.message);
+        console.error('Test failed for r= '+ r +' with error: ' + error.message); // Log the error we encounter in the tests
         throw error
       };
     }
@@ -160,28 +172,30 @@ Deno.test("PT: Negative redeemer after deadline always succeeds", () => {
 
 Deno.test("PT: Positive redeemer after deadline always fails", () => {
   fc.assert(fc.asyncProperty(
-    positiveBigIntArbitrary, afterDeadlineWaits,async (r:bigint, n: number) => {
+    positiveBigIntArbitrary, afterDeadlineWaits,async (r:bigint, n: number) => { //run above test with generated positive redeemer (should fail) and reached deadline
       let errorThrown = false;
       try {
         await runTest({deadline:BigInt(Date.now()+dl)},r,n);
       } catch (error) {
         errorThrown = true;
       }
-      assert(errorThrown,'Test failed for r= ' + r + ' and n= '+ n);      
+      assert(errorThrown,'Test failed for r= ' + r + ' and n= '+ n);  // This test is expected to fail
     }
   ),{numRuns:100});
 })
 
 Deno.test("PT: Anything before the deadline always fails", () => {
   fc.assert(fc.asyncProperty(
-    fc.bigIntN(256), beforeDeadlineWaits,async (r:bigint, n: number) => {
+    fc.bigIntN(256), beforeDeadlineWaits,async (r:bigint, n: number) => { //run above test with any redeemer and not reached deadline (should fail)
       let errorThrown = false;
-      try {
+      try { 
         await runTest({deadline:BigInt(Date.now()+dl)},r,n);
       } catch (error) {
         errorThrown = true;
       }
-      assert(errorThrown,'Test failed for r= ' + r + ' and n= ' + n);      
+      assert(errorThrown,'Test failed for r= ' + r + ' and n= ' + n);  // This test is expected to fail      
     }
   ),{numRuns:100});
 })
+
+// ****************** We run these tests using this command:  deno test -A lecture_tests/NegativeRTimed.ts 
