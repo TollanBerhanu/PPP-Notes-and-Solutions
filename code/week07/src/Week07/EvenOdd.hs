@@ -38,12 +38,12 @@ import           Prelude              (Semigroup (..), Show (..), String)
 import qualified Prelude
 
 data Game = Game
-    { gFirst          :: !PaymentPubKeyHash
-    , gSecond         :: !PaymentPubKeyHash
-    , gStake          :: !Integer
-    , gPlayDeadline   :: !POSIXTime
-    , gRevealDeadline :: !POSIXTime
-    , gToken          :: !AssetClass
+    { gFirst          :: !PaymentPubKeyHash     -- Pubkey of the Player 1
+    , gSecond         :: !PaymentPubKeyHash     -- Pubkey of the Player 2
+    , gStake          :: !Integer               -- amount of lovelace used as stake by each player
+    , gPlayDeadline   :: !POSIXTime             -- time the second player can make a move before the first player can claim back its stake
+    , gRevealDeadline :: !POSIXTime             -- time the first player can claim victory by revealing its nonce, given the second player has made a move
+    , gToken          :: !AssetClass            -- current state of the game (this gets updated on every move made by players)
     } deriving (Show, Generic, FromJSON, ToJSON, Prelude.Eq, Prelude.Ord)
 
 PlutusTx.makeLift ''Game
@@ -58,9 +58,10 @@ instance Eq GameChoice where
     _    == _    = False
 
 PlutusTx.unstableMakeIsData ''GameChoice
-
-data GameDatum = GameDatum BuiltinByteString (Maybe GameChoice)
+data GameDatum = GameDatum BuiltinByteString (Maybe GameChoice)     -- This is the state of the contract
     deriving Show
+            -- BuiltinByteString: The hash submitted by the first player
+            -- (Maybe GameChoice): The move by the second player (Nothing -> the 2nd player hasn't moved yet,  Just sth -> the 2nd player has moved)
 
 instance Eq GameDatum where
     {-# INLINABLE (==) #-}
@@ -70,11 +71,17 @@ PlutusTx.unstableMakeIsData ''GameDatum
 
 data GameRedeemer = Play GameChoice | Reveal BuiltinByteString | ClaimFirst | ClaimSecond
     deriving Show
+            -- Play: when the second player moves with a GameChoice (zero / one)
+            -- Reveal: when the first player has won and must prove / reveal its nonce, hence the BuiltinByteString. There is no need to provide the move of the 
+                        -- player because revealing implicitly means winning 
+            -- ClaimFirst: the first player can claim back its stake
+            -- ClaimSecond: if the first player doesn't reveal (because it lost), the second player can claim the winnings
 
 PlutusTx.unstableMakeIsData ''GameRedeemer
 
+-- These are some helper functions
 {-# INLINABLE lovelaces #-}
-lovelaces :: Value -> Integer
+lovelaces :: Value -> Integer   -- extract the amount of lovelaces contained in a Value type
 lovelaces = Ada.getLovelace . Ada.fromValue
 
 {-# INLINABLE gameDatum #-}

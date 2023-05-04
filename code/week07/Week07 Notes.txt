@@ -1,0 +1,19 @@
+******** State Machines ********
+
+Consider a scenario where two people (alice and bob) play a game. In this game, both alice and bob have to choose a number from 0 or 1. If they both choose the same
+number, Alice wins, otherwise Bob wins.
+Lets say they are playing this game over a network where only one of them can send their choice at once. This is how it's implemented
+    Alice -> prevHash = Hash (nonce + 0) -> Bob
+    Bob -> 0 -> Alice (Alice wins)
+    Alice -> Reveal (nonce + 0) -> Bob
+    Bob Hash (nonce + 0) compare prevHash 
+    Alice -> Claims stake
+
+    Or
+
+    Bob -> 1 -> Alice (Bob wins)
+    Alice -> sends nothing and waits until time passes (sore loser)
+    Bob -> Claims prize
+
+
+** This scenario is implemented in the module EvenOdd.hs
