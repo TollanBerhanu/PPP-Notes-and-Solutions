@@ -37,6 +37,8 @@ import           PlutusTx.Prelude     hiding (Semigroup(..), unless)
 import           Prelude              (Semigroup (..), Show (..), String)
 import qualified Prelude
 
+-- ====================== ON CHAIN Code ===============================
+
 data Game = Game
     { gFirst          :: !PaymentPubKeyHash     -- Pubkey of the Player 1
     , gSecond         :: !PaymentPubKeyHash     -- Pubkey of the Player 2
@@ -172,6 +174,8 @@ typedGameValidator game = Scripts.mkTypedValidator @Gaming
   where
     wrap = Scripts.wrapValidator @GameDatum @GameRedeemer
 
+-- ====================== ON / OFF CHAIN =========================
+
 gameValidator :: Game -> Validator
 gameValidator = Scripts.validatorScript . typedGameValidator
 
@@ -188,6 +192,8 @@ findGameOutput game = do
   where
     f :: (TxOutRef, ChainIndexTxOut) -> Bool
     f (_, o) = assetClassValueOf (_ciTxOutValue o) (gToken game) == 1
+
+-- ======================== OFF CHAIN Code =======================
 
 waitUntilTimeHasPassed :: AsContractError e => POSIXTime -> Contract w s e ()
 waitUntilTimeHasPassed t = do

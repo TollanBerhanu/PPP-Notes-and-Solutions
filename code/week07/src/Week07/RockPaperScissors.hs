@@ -40,6 +40,8 @@ import           PlutusTx.Prelude             hiding (Semigroup(..), check, unle
 import           Prelude                      (Semigroup (..), Show (..), String)
 import qualified Prelude
 
+-- =================== ON CHAIN CODE ====================
+
 data Game = Game
     { gFirst          :: !PaymentPubKeyHash
     , gSecond         :: !PaymentPubKeyHash
@@ -179,6 +181,8 @@ gameValidator = Scripts.validatorScript . typedGameValidator
 
 gameAddress :: Game -> Ledger.Address
 gameAddress = scriptAddress . gameValidator
+
+-- ================ OFF CHAIN Code =========================
 
 gameClient :: Game -> StateMachineClient GameDatum GameRedeemer
 gameClient game = mkStateMachineClient $ StateMachineInstance (gameStateMachine' game) (typedGameValidator game)
