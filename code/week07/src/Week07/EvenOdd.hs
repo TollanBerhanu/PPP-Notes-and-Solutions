@@ -39,14 +39,25 @@ import qualified Prelude
 
 -- ====================== ON CHAIN Code ===============================
 
+-- This is given as a parameter to the contract
 data Game = Game
     { gFirst          :: !PaymentPubKeyHash     -- Pubkey of the Player 1
     , gSecond         :: !PaymentPubKeyHash     -- Pubkey of the Player 2
     , gStake          :: !Integer               -- amount of lovelace used as stake by each player
     , gPlayDeadline   :: !POSIXTime             -- time the second player can make a move before the first player can claim back its stake
     , gRevealDeadline :: !POSIXTime             -- time the first player can claim victory by revealing its nonce, given the second player has made a move
-    , gToken          :: !AssetClass            -- current state of the game (this gets updated on every move made by players)
+    , gToken          :: !AssetClass            -- (NFT) current state of the game (this gets updated on every move made by players)
     } deriving (Show, Generic, FromJSON, ToJSON, Prelude.Eq, Prelude.Ord)
+
+
+-- The state is every move made by each player
+    -- 1. State : Hash (nonce + Player 1 choice)
+    -- 2. State : Hash (nonce + Player 1 choice) + Player 2 choice
+-- The state gets updated on each step (Data is not immutable in ethereum), but in cardano, we spend the UTxO containing the state and create a new UTxO containing
+-- the updated state... (but how do we know the new UTxO is an extension of the old one)
+    -- To answer this, we use NFTs inside the UTxO
+            -- Player 1 -> New State/UTxO : NFT + Hash (nonce + Player 1 choice) :: Datum
+            -- Player 2 -> Consume old UTxO ->  New State/UTxO : NFT + Player 2 choice :: Datum
 
 PlutusTx.makeLift ''Game
 
