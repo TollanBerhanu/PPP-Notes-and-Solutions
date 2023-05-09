@@ -46,7 +46,9 @@ data Game = Game
     , gStake          :: !Integer               -- amount of lovelace used as stake by each player
     , gPlayDeadline   :: !POSIXTime             -- time the second player can make a move before the first player can claim back its stake
     , gRevealDeadline :: !POSIXTime             -- time the first player can claim victory by revealing its nonce, given the second player has made a move
-    , gToken          :: !AssetClass            -- (NFT) current state of the game (this gets updated on every move made by players)
+    , gToken          :: !AssetClass            -- This is the NFT thats passed around in each turn (to validate whose turn it is and this allows only one valid txn
+                                                    -- to be sent by each player on every turn).. because anyone can send UTxOs to the same address with the same datum
+                                                    -- but only one can contain the NFT as pat of its Value
     } deriving (Show, Generic, FromJSON, ToJSON, Prelude.Eq, Prelude.Ord)
 
 
@@ -87,8 +89,8 @@ data GameRedeemer = Play GameChoice | Reveal BuiltinByteString | ClaimFirst | Cl
             -- Play: when the second player moves with a GameChoice (zero / one)
             -- Reveal: when the first player has won and must prove / reveal its nonce, hence the BuiltinByteString. There is no need to provide the move of the 
                         -- player because revealing implicitly means winning 
-            -- ClaimFirst: the first player can claim back its stake
-            -- ClaimSecond: if the first player doesn't reveal (because it lost), the second player can claim the winnings
+            -- ClaimFirst: the first player can claim back its stake (First player wins and takes back the NFT)
+            -- ClaimSecond: if the first player doesn't reveal (because it lost), the second player can claim the winnings & the NFT
 
 PlutusTx.unstableMakeIsData ''GameRedeemer
 
@@ -98,7 +100,7 @@ lovelaces :: Value -> Integer   -- extract the amount of lovelaces contained in 
 lovelaces = Ada.getLovelace . Ada.fromValue
 
 {-# INLINABLE gameDatum #-}
-gameDatum :: Maybe Datum -> Maybe GameDatum
+gameDatum :: Maybe Datum -> Maybe GameDatum -- Deseralize the Datum into our GameDatum
 gameDatum md = do
     Datum d <- md
     PlutusTx.fromBuiltinData d
@@ -106,8 +108,11 @@ gameDatum md = do
 {-# INLINABLE mkGameValidator #-}
 mkGameValidator :: Game -> BuiltinByteString -> BuiltinByteString -> GameDatum -> GameRedeemer -> ScriptContext -> Bool
 mkGameValidator game bsZero' bsOne' dat red ctx =
+        -- Check if the input contains the NFT
     traceIfFalse "token missing from input" (assetClassValueOf (txOutValue ownInput) (gToken game) == 1) &&
+    -- (Datum Hash_1st_Player Move_2nd_player,  Redeemer move_of_current_player)
     case (dat, red) of
+            -- First player has moved, but second player is moving ... this is the txn in w/c the second player moves
         (GameDatum bs Nothing, Play c) ->
             traceIfFalse "not signed by second player"   (txSignedBy info (unPaymentPubKeyHash $ gSecond game))             &&
             traceIfFalse "first player's stake missing"  (lovelaces (txOutValue ownInput) == gStake game)                   &&
@@ -141,30 +146,38 @@ mkGameValidator game bsZero' bsOne' dat red ctx =
     info = scriptContextTxInfo ctx
 
     ownInput :: TxOut
-    ownInput = case findOwnInput ctx of
+    ownInput = case findOwnInput ctx of -- findOwnInput returns a (Maybe TxInInfo) ... it can be Nothing if this script is used for minting
         Nothing -> traceError "game input missing"
-        Just i  -> txInInfoResolved i
+        Just i  -> txInInfoResolved i   -- txInInfoResolved :: TxOut ... Actual output: (Address, Value, Maybe DatumHash)
 
     ownOutput :: TxOut
-    ownOutput = case getContinuingOutputs ctx of
+    ownOutput = case getContinuingOutputs ctx of -- getContinuingOutputs returns [TxOut]... the output(s) that goes to the script address (normally, we expect one o/p)
         [o] -> o
         _   -> traceError "expected exactly one game output"
 
-    outputDatum :: GameDatum
-    outputDatum = case gameDatum $ txOutDatumHash ownOutput >>= flip findDatum info of
+    -- the producer of the UTxO is required the actual datum to retrieve the datum
+    outputDatum :: GameDatum    -- get the Datum at ownOutput
+    outputDatum = case gameDatum $ txOutDatumHash ownOutput >>= flip findDatum info of  -- findDatum :: DatumHash -> TxInfo -> Maybe Datum (we apply the TxInfo to 
+                                                                                                -- findDatum using flip (it flips the two arguments of a function))                           
         Nothing -> traceError "game output datum not found"
-        Just d  -> d
+        Just d  -> d                                                                    -- this will return the datum if its included in the txn
 
+    -- this is used to check if the choice given by the first player is legit after it won this round
+               -- Hash it submitted -> the revealed nonce -> move both players made
     checkNonce :: BuiltinByteString -> BuiltinByteString -> GameChoice -> Bool
     checkNonce bs nonce cSecond = sha2_256 (nonce `appendByteString` cFirst) == bs
       where
-        cFirst :: BuiltinByteString
-        cFirst = case cSecond of
-            Zero -> bsZero'
+        cFirst :: BuiltinByteString -- we need the BuiltinByteString version of the move made by the first player
+        cFirst = case cSecond of    -- This function should run when the first player wins, so we are checking for what makes Player 1 win (in this case - same choice)
+            Zero -> bsZero' 
             One  -> bsOne'
 
-    nftToFirst :: Bool
+    -- Here we give the NFT back to the first player (the one who initiated the game), after the game is over (no matter who wins)
+    nftToFirst :: Bool  -- Return true if the output of the txn implies that the NFT is paid to the first player
     nftToFirst = assetClassValueOf (valuePaidTo info $ unPaymentPubKeyHash $ gFirst game) (gToken game) == 1
+    
+    -- NOTE THAT: we are only checking the payment part here using valuePaidTo. Had this game included any staking rewards, we are not checking whether the staking
+    -- rewards go to the first player or the winner ... this is a potential security risk
 
 data Gaming
 instance Scripts.ValidatorTypes Gaming where
