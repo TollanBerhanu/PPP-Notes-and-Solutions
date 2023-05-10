@@ -110,35 +110,42 @@ mkGameValidator :: Game -> BuiltinByteString -> BuiltinByteString -> GameDatum -
 mkGameValidator game bsZero' bsOne' dat red ctx =
         -- Check if the input contains the NFT
     traceIfFalse "token missing from input" (assetClassValueOf (txOutValue ownInput) (gToken game) == 1) &&
-    -- (Datum Hash_1st_Player Move_2nd_player,  Redeemer move_of_current_player)
+    -- (GameDatum Hash_1st_Player_Move 2nd_player_Move,  GameRedeemer Current_player_Move)
     case (dat, red) of
             -- First player has moved, but second player is moving ... this is the txn in w/c the second player moves
         (GameDatum bs Nothing, Play c) ->
             traceIfFalse "not signed by second player"   (txSignedBy info (unPaymentPubKeyHash $ gSecond game))             &&
-            traceIfFalse "first player's stake missing"  (lovelaces (txOutValue ownInput) == gStake game)                   &&
-            traceIfFalse "second player's stake missing" (lovelaces (txOutValue ownOutput) == (2 * gStake game))            &&
-            traceIfFalse "wrong output datum"            (outputDatum == GameDatum bs (Just c))                             &&
-            traceIfFalse "missed deadline"               (to (gPlayDeadline game) `contains` txInfoValidRange info)         &&
-            traceIfFalse "token missing from output"     (assetClassValueOf (txOutValue ownOutput) (gToken game) == 1)
+            traceIfFalse "first player's stake missing"  (lovelaces (txOutValue ownInput) == gStake game)                   && -- check staked UTxO in player1's i/p
+            traceIfFalse "second player's stake missing" (lovelaces (txOutValue ownOutput) == (2 * gStake game))            && -- check staked UTxO in player2's o/p
+                                        -- we made this 2 * stake because the second player consumes the first player's UTxO and stakes the first players + his own
+            traceIfFalse "wrong output datum"            (outputDatum == GameDatum bs (Just c))                             &&  -- Datum must contain tha same val as 
+                                                                                                                            -- before with the 2nd player's move added
+            traceIfFalse "missed deadline"               (to (gPlayDeadline game) `contains` txInfoValidRange info)         &&  -- 2nd player must submit before the play deadline
+            traceIfFalse "token missing from output"     (assetClassValueOf (txOutValue ownOutput) (gToken game) == 1)          -- check NFT in player 2's output
 
+        -- Both players have moved and the first player discovers that it has won ... (It has to reveal the nonce to prove that and claim winnings)
         (GameDatum bs (Just c), Reveal nonce) ->
             traceIfFalse "not signed by first player"    (txSignedBy info (unPaymentPubKeyHash $ gFirst game))              &&
-            traceIfFalse "commit mismatch"               (checkNonce bs nonce c)                                            &&
-            traceIfFalse "missed deadline"               (to (gRevealDeadline game) `contains` txInfoValidRange info)       &&
-            traceIfFalse "wrong stake"                   (lovelaces (txOutValue ownInput) == (2 * gStake game))             &&
-            traceIfFalse "NFT must go to first player"   nftToFirst
+            traceIfFalse "commit mismatch"               (checkNonce bs nonce c)                                            &&  -- The nonce must dive a valid hash
+            traceIfFalse "missed deadline"               (to (gRevealDeadline game) `contains` txInfoValidRange info)       &&  -- 1st player must reveal before the reveal deadline
+            traceIfFalse "wrong stake"                   (lovelaces (txOutValue ownInput) == (2 * gStake game))             &&  -- The input must contain the stake of both 
+                                                                                                                        -- players, and the winner takes all
+            traceIfFalse "NFT must go to first player"   nftToFirst                                                             -- The NFT must go back to the 1st player
 
+        -- Second player hasn't moved and the deadline passes (1st player gets its stake back)
         (GameDatum _ Nothing, ClaimFirst) ->
             traceIfFalse "not signed by first player"    (txSignedBy info (unPaymentPubKeyHash $ gFirst game))              &&
-            traceIfFalse "too early"                     (from (1 + gPlayDeadline game) `contains` txInfoValidRange info)   &&
-            traceIfFalse "first player's stake missing"  (lovelaces (txOutValue ownInput) == gStake game)                   &&
-            traceIfFalse "NFT must go to first player"   nftToFirst
+            traceIfFalse "too early"                     (from (1 + gPlayDeadline game) `contains` txInfoValidRange info)   &&  -- 1st player can take back its stake only after the deadline has passed
+            traceIfFalse "first player's stake missing"  (lovelaces (txOutValue ownInput) == gStake game)                   &&  -- 1st player gets its stake
+            traceIfFalse "NFT must go to first player"   nftToFirst                                                                 -- and its NFT back
 
+        -- Both players move but first player doesn't reveal its nonce (2nd player can claim its winnings)
         (GameDatum _ (Just _), ClaimSecond) ->
             traceIfFalse "not signed by second player"   (txSignedBy info (unPaymentPubKeyHash $ gSecond game))             &&
             traceIfFalse "too early"                     (from (1 + gRevealDeadline game) `contains` txInfoValidRange info) &&
-            traceIfFalse "wrong stake"                   (lovelaces (txOutValue ownInput) == (2 * gStake game))             &&
-            traceIfFalse "NFT must go to first player"   nftToFirst
+            traceIfFalse "wrong stake"                   (lovelaces (txOutValue ownInput) == (2 * gStake game))             &&  -- Both players must have provided the stake
+            traceIfFalse "NFT must go to first player"   nftToFirst                                                             -- NFT still goes back to the originator
+                                                                                                            --  of the game (1st player) incase they want to play again
 
         _ -> False
   where
@@ -184,14 +191,14 @@ instance Scripts.ValidatorTypes Gaming where
     type instance DatumType Gaming = GameDatum
     type instance RedeemerType Gaming = GameRedeemer
 
-bsZero, bsOne :: BuiltinByteString
+bsZero, bsOne :: BuiltinByteString  -- Define the appropriate Strings to use as moves
 bsZero = "0"
 bsOne  = "1"
 
 typedGameValidator :: Game -> Scripts.TypedValidator Gaming
 typedGameValidator game = Scripts.mkTypedValidator @Gaming
     ($$(PlutusTx.compile [|| mkGameValidator ||])
-        `PlutusTx.applyCode` PlutusTx.liftCode game
+        `PlutusTx.applyCode` PlutusTx.liftCode game     -- Apply the game rules (The players, the staking amount, the deadlines, the NFT)
         `PlutusTx.applyCode` PlutusTx.liftCode bsZero
         `PlutusTx.applyCode` PlutusTx.liftCode bsOne)
     $$(PlutusTx.compile [|| wrap ||])
@@ -206,9 +213,12 @@ gameValidator = Scripts.validatorScript . typedGameValidator
 gameAddress :: Game -> Ledger.Address
 gameAddress = scriptAddress . gameValidator
 
+-- ======================== OFF CHAIN Code =======================
+
+-- This function will look for the NFT in the validator sctipt's address
 findGameOutput :: Game -> Contract w s Text (Maybe (TxOutRef, ChainIndexTxOut, GameDatum))
 findGameOutput game = do
-    utxos <- utxosAt $ gameAddress game
+    utxos <- utxosAt $ gameAddress game 
     return $ do
         (oref, o) <- find f $ Map.toList utxos
         dat       <- gameDatum $ either (const Nothing) Just $ _ciTxOutDatum o
@@ -217,7 +227,6 @@ findGameOutput game = do
     f :: (TxOutRef, ChainIndexTxOut) -> Bool
     f (_, o) = assetClassValueOf (_ciTxOutValue o) (gToken game) == 1
 
--- ======================== OFF CHAIN Code =======================
 
 waitUntilTimeHasPassed :: AsContractError e => POSIXTime -> Contract w s e ()
 waitUntilTimeHasPassed t = do
@@ -227,21 +236,22 @@ waitUntilTimeHasPassed t = do
     s2 <- currentSlot
     logInfo @String $ "waited until: " ++ show s2
 
+-- The inputs required by the first player to play the game
 data FirstParams = FirstParams
-    { fpSecond         :: !PaymentPubKeyHash
-    , fpStake          :: !Integer
+    { fpSecond         :: !PaymentPubKeyHash    -- the opponent
+    , fpStake          :: !Integer              
     , fpPlayDeadline   :: !POSIXTime
     , fpRevealDeadline :: !POSIXTime
-    , fpNonce          :: !BuiltinByteString
-    , fpCurrency       :: !CurrencySymbol
-    , fpTokenName      :: !TokenName
-    , fpChoice         :: !GameChoice
+    , fpNonce          :: !BuiltinByteString    -- the Nonce chosen by the first player
+    , fpCurrency       :: !CurrencySymbol       -- the CurrencySymbol of the NFT
+    , fpTokenName      :: !TokenName            -- the TokenName of the NFT
+    , fpChoice         :: !GameChoice           -- the choice the first player makes
     } deriving (Show, Generic, FromJSON, ToJSON, ToSchema)
 
 firstGame :: forall w s. FirstParams -> Contract w s Text ()
 firstGame fp = do
     pkh <- Contract.ownPaymentPubKeyHash
-    let game = Game
+    let game = Game     -- Define the game rules to apply to the game Validator
             { gFirst          = pkh
             , gSecond         = fpSecond fp
             , gStake          = fpStake fp
@@ -249,10 +259,10 @@ firstGame fp = do
             , gRevealDeadline = fpRevealDeadline fp
             , gToken          = AssetClass (fpCurrency fp, fpTokenName fp)
             }
-        v    = lovelaceValueOf (fpStake fp) <> assetClassValue (gToken game) 1
+        v    = lovelaceValueOf (fpStake fp) <> assetClassValue (gToken game) 1      -- The stake and the NFT we put in to the output UTxO
         c    = fpChoice fp
         bs   = sha2_256 $ fpNonce fp `appendByteString` if c == Zero then bsZero else bsOne
-        tx   = Constraints.mustPayToTheScript (GameDatum bs Nothing) v
+        tx   = Constraints.mustPayToTheScript (GameDatum bs Nothing) v -- This is submitted by the first player (the second player hasn't played yet)
     ledgerTx <- submitTxConstraints (typedGameValidator game) tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
     logInfo @String $ "made first move: " ++ show (fpChoice fp)
@@ -264,7 +274,7 @@ firstGame fp = do
     case m of
         Nothing             -> throwError "game output not found"
         Just (oref, o, dat) -> case dat of
-            GameDatum _ Nothing -> do
+            GameDatum _ Nothing -> do               -- The second player hasn't moved before the deadline
                 logInfo @String "second player did not play"
                 let lookups = Constraints.unspentOutputs (Map.singleton oref o) <>
                               Constraints.otherScript (gameValidator game)
