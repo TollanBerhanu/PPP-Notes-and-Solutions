@@ -95,7 +95,7 @@ lovelaces = Ada.getLovelace . Ada.fromValue
 {-# INLINABLE transition #-}
 transition :: Game -> State GameDatum -> GameRedeemer -> Maybe (TxConstraints Void Void, State GameDatum)
 transition game s r = case (stateValue s, stateData s, r) of
-    (v, GameDatum bs Nothing, Play c)
+    (v, GameDatum bs Nothing, Play c)   -- 1st player moves, 2nd player is moving
         | lovelaces v == gStake game             -> Just ( Constraints.mustBeSignedBy (gSecond game)                    <>
                                                            Constraints.mustValidateIn (to $ gPlayDeadline game)
                                                          , State (GameDatum bs $ Just c) (lovelaceValueOf $ 2 * gStake game)
