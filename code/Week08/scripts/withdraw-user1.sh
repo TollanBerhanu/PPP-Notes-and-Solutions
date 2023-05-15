@@ -1,7 +1,7 @@
 #!/bin/bash
 
 txin=$1
-amt=$(/workspace/code/Week08/scripts/query-stake-address-info-user1.sh | jq .[0].rewardAccountBalance)
+amt=$(/workspace/code/Week08/scripts/query-stake-address-info-user1.sh | jq .[0].rewardAccountBalance) # extract the reward amount using 'linux jq' tool
 body=/workspace/code/Week08/tmp/tx.txbody
 signed=/workspace/code/Week08/tmp/tx.tx
 

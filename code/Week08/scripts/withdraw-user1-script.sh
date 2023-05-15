@@ -2,8 +2,8 @@
 
 txin=$1
 tmp=/workspace/code/Week08/tmp
-amt1=$(/workspace/code/Week08/scripts/query-stake-address-info-user1-script.sh | jq .[0].rewardAccountBalance)
-amt2=$(expr $amt1 / 2 + 1)
+amt1=$(/workspace/code/Week08/scripts/query-stake-address-info-user1-script.sh | jq .[0].rewardAccountBalance) #Query the amount of reward accumulated for user1 
+amt2=$(expr $amt1 / 2 + 1)                             # The amount we pay for user 2
 pp=$tmp/protocol-params.json
 body=$tmp/tx.txbody
 signed=$tmp/tx.tx
@@ -18,6 +18,8 @@ cardano-cli query protocol-parameters \
     --testnet-magic 42 \
     --out-file $pp
 
+# Transfer half of the rewards to User 2 and set the change address to User 1's payment address
+# You should attach the serialized script to access the funds at User 1's stake address
 cardano-cli transaction build \
     --babbage-era \
     --testnet-magic 42 \
@@ -31,6 +33,8 @@ cardano-cli transaction build \
     --withdrawal-redeemer-file /workspace/code/Week08/assets/unit.json \
     --protocol-params-file $pp
 
+# We include User 1's UTxO in its payment address to use as collateral
+# We sign the txn for the payment part of the txn not the staking part  ???
 cardano-cli transaction sign \
     --testnet-magic 42 \
     --tx-body-file $body \
