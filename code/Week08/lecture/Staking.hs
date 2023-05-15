@@ -83,5 +83,6 @@ saveStakeValidator bech32 = do
         Nothing   -> ioError $ userError $ "Invalid address: " <> bech32    -- Throw an exception
         Just addr -> writeStakeValidatorToFile "./assets/staking.plutus" $ stakeValidator addr
 
--- After we get the serialized script, we must get the stake address from the script
--- Then we register that stake address and then delegate to a pool ... using scripts/register-and-delegate.sh
+-- ** scripts/register-and-delegate.sh
+    -- After we get the serialized script, we must build the stake address from the script
+    -- Then we register that stake address and then delegate to a pool
