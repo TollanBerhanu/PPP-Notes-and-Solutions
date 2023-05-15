@@ -1,0 +1,45 @@
+Staking depends on epochs (which is 5 days in cardano). That's why we need a private testnet in which we can define the slot length and the duration of 1 epoch to
+try out staking locally. Staking rewards are paid a few epochs after earning them, so we don't have to wait long in out private testnet for our staking reward to 
+accumulate in our staking address.
+
+For reference, we use the private testnet setup of this link: https://github.com/woofpool/cardano-private-testnet-setup/tree/babbage  
+        (Branch: babbage ... for using plutus, the main branch still uses the alonzo era)
+
+* In this private testnet, we initially have 3 nodes, 3 users (+ funds) and 3 stake pools (by default)
+
+* When you operate a stake pool in cardano, there are so called KES keys that are renewed every two weeks in the mainnet. This time is much much shorter (about an hour)
+    when you operate a stake pool in your own private testnet, so watch out for that. A possible solution to this is to restart the testnet or update your KES key.
+
+    => To start the private testnet (cardano node), we can run the script: /cardano-private-testnet-setup/scripts/automate.sh 
+    => We can run different commands on the testnet using the scripts provided in this week's folder: (code/Week08/scripts/..)
+    => If we run this script: code/Week08/scripts/query-stake-address-info-user1.sh ... we can see that user 1 is already delegating to a stake pool and he has quite
+        a lot of ADA accumulating in its rewardAccountBalance. We can withdraw all rewards from our staking address all at once using the script: code/Week08/scripts/withdraw-user1.sh 
+        We need to specify the amount we withdraw (which changes rapidly) so we query the amount and use it in the withdraw command in the same script.
+        ** We sign the txn using both our privKey (because we input a UTxO as collateral) and our stakingPrivKey (to access the rewards at the staking address)
+
+* Now we will see how to create a staking address based on a plutus script (instead of pub/pri key pair) to withdraw rewarda by executing the script instead of signing
+    the txn
+    => In this case, the ScriptPurpose parameter/constructor in the ScriptContext will be (Rewarding StakingCredential) / (Certifying DCert)
+        -> Rewarding ... to spend the UTxO at the staking address
+        -> Certifying ... to attach certifications to a txn (for staking, delegation, registration and de-registration certificates)
+            # E.g., > To newly create a stake address, you first have to register it by creating a txn that contains a registration certificate for this stake address
+                    > If you want to delegate to a pool / change an existing delegation, you have to create a txn that contains a delegation certificate and the pool
+                       to delegate to
+                    > You can also unregister a stake address and get back the original deposit you used to register the stake address
+
+* Consider this
+ScriptContext
+    ScriptPurpose
+        Minting, Spending, Rewarding, Certifying
+    TxInfo
+        ... txInfoWdrl :: Map StakingCredential Integer ...
+ 
+    => The field 'txInfoWdrl' (withdrawals) indicates the amounts of lovelace (Integer) we withdraw from several StakingCredentials
+
+Questions
+* What is a StakingCredential?
+* If a StakingCredential is the hash of the script (the ScriptPurpose takes only one StakingCredential) and if txInfoWdrl is a Map from StakingCredential to Integer, 
+    what is the case that multiple StakingCredentials will be involved in the txn? 
+* What is a delegation certificate?
+* What is a staking address? When do we need it? Notice that StakeValidators have payment addresses.
+* What happens to your funds when you delegate to a pool?
