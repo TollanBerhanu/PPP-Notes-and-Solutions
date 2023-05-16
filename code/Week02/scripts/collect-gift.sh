@@ -10,6 +10,7 @@ collateral="$2" # specify some UTxO that you own incase your txn fails / the scr
                 # submit your txn to the network and you don't have to pay anything. But if you circumvent that maliciously, then
                 # you could lose the collateral (about 4 Ada)
 txin="$3" # UTxO in the senders wallet (to pay for txn fees), but in this case we can pay from the gift we collect
+txin2="$4" # UTxO in the senders wallet (to pay for txn fees), but in this case we can pay from the gift we collect
 
 pp="$assets/protocol-parameters.json"
 body="$assets/collect-gift.txbody"
@@ -27,6 +28,9 @@ cardano-cli transaction build \
     --testnet-magic 2 \
     --tx-in "$txin" \
     --tx-in-script-file "$assets/gift.plutus" \
+    --tx-in-inline-datum-present \
+    --tx-in-redeemer-file "$assets/unit.json" \
+    --tx-in "$txin2" \
     --tx-in-inline-datum-present \
     --tx-in-redeemer-file "$assets/unit.json" \
     --tx-in-collateral "$collateral" \
