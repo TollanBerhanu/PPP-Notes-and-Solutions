@@ -14,13 +14,22 @@ module Homework
     , saveStakeValidator'
     ) where
 
+import           Plutus.V1.Ledger.Value (valueOf)
 import           Plutus.V2.Ledger.Api (Address, BuiltinData, PubKeyHash,
-                                       ScriptContext, StakeValidator,
-                                       mkStakeValidatorScript)
+                                       ScriptContext (scriptContextTxInfo, scriptContextPurpose), StakeValidator,
+                                       mkStakeValidatorScript, StakingCredential, TxOut (txOutValue, txOutAddress),
+                                       TxInfo (txInfoOutputs, txInfoWdrl),
+                                       adaSymbol, adaToken,
+                                    ScriptPurpose (Certifying, Rewarding))
 import qualified PlutusTx
-import           PlutusTx.Prelude     (Bool (..), ($), (.))
-import           Prelude              (IO, String, undefined)
-import           Utilities            (wrapStakeValidator)
+import qualified PlutusTx.AssocMap      as PlutusTx
+import           PlutusTx.Prelude     (($), (.), traceIfFalse, otherwise, (&&), Integer, Maybe (Nothing, Just), traceError, foldl, Ord (..),
+                                        AdditiveSemigroup ((+)), Bool (..), Eq ((==)), MultiplicativeSemigroup ((*)), Semigroup ((<>)))
+import           Prelude              (IO, String, ioError)
+import           Utilities            (wrapStakeValidator, writeStakeValidatorToFile, tryReadAddress)
+-- import Data.Aeson (Value(Bool))
+import           System.IO.Error        (userError)
+import Plutus.V2.Ledger.Contexts (txSignedBy)
 
 -- | A staking validator with two parameters, a pubkey hash and an address. The validator
 --   should work as follows:
@@ -28,7 +37,33 @@ import           Utilities            (wrapStakeValidator)
 --   2.) The given address needs to receive at least half of all withdrawn rewards.
 {-# INLINABLE mkStakeValidator' #-}
 mkStakeValidator' :: PubKeyHash -> Address -> () -> ScriptContext -> Bool
-mkStakeValidator' _pkh _addr () _ctx = undefined
+mkStakeValidator' _pkh _addr () _ctx = traceIfFalse "Only user 1 can delegate or withdraw using this stake validator" signedByUser1 &&
+                                       traceIfFalse "You should send atleast half of the rewards to User 2" halfToUser2
+    where
+        info :: TxInfo
+        info = scriptContextTxInfo _ctx
+
+        signedByUser1 :: Bool
+        signedByUser1 = txSignedBy (scriptContextTxInfo _ctx) _pkh
+
+        amount :: StakingCredential -> Integer  
+        amount cred = case PlutusTx.lookup cred $ txInfoWdrl info of    -- txInfoWdrl :: TxInfo -> Map StakingCredential Integer 
+            Just amt -> amt
+            Nothing  -> traceError "withdrawal not found"       
+
+        paidToAddress :: Integer    
+        paidToAddress = foldl addAdas 0 $ txInfoOutputs info  -- txInfoOutputs :: [TxOut] ... list of all outputs in the txn
+            where
+                addAdas :: Integer -> TxOut -> Integer
+                addAdas adas' txOut'
+                    | txOutAddress txOut' == _addr = adas' + valueOf (txOutValue txOut') adaSymbol adaToken  -- add all Ada values getting sent to User 2
+                    | otherwise              = adas'                                                                                            
+
+        halfToUser2 :: Bool
+        halfToUser2 = case scriptContextPurpose _ctx of
+                        Certifying _   -> True                      -- (Certifying DCert) ... we don't consider the ScriptPurpose that has to do with Certifying
+                        Rewarding cred -> 2 * paidToAddress >= amount cred     -- (Rewarding StakingCredential) ...  alteast half of the rewards is given to User 2
+                        _              -> False    
 
 {-# INLINABLE mkWrappedStakeValidator' #-}
 mkWrappedStakeValidator' :: PubKeyHash -> Address -> BuiltinData -> BuiltinData -> ()
@@ -44,4 +79,8 @@ stakeValidator' pkh addr = mkStakeValidatorScript $
 ------------------------------------- HELPER FUNCTIONS --------------------------------------------
 
 saveStakeValidator' :: String -> String -> IO ()
-saveStakeValidator' _pkh _bech32 = undefined
+saveStakeValidator' _pkh _bech32 = case tryReadAddress _bech32 of   
+        Nothing   -> ioError $ userError $ "Invalid address: " <> _bech32 
+        Just addr -> case tryReadAddress _pkh of 
+                         Nothing   -> ioError $ userError $ "Invalid address: " <> _bech32 
+                         Just pkh -> writeStakeValidatorToFile "./assets/staking.plutus" $ stakeValidator' pkh addr
