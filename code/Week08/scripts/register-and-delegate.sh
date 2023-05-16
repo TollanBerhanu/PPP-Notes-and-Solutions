@@ -13,6 +13,8 @@ pp=$tmp/protocol-params.json                            # File to write the prot
 body=$tmp/tx.txbody                                     # File to write the built transaction
 signed=$tmp/tx.tx                                       # File to write the signed transaction
 
+normaddr=$tmp/norm.addr
+
 # Set the node.socket path
 export CARDANO_NODE_SOCKET_PATH=/workspace/cardano-private-testnet-setup/private-testnet/node-spo1/node.sock
 
@@ -24,7 +26,7 @@ cardano-cli stake-address build \
 
 echo "stake address: $(cat $script_stake_addr)"
 
-# Build the payment address from the serialized script (set the payment-verification-key to user 1's payment vkey)
+# Build the payment address from the serialized script (set the payment-verification-key to user 1's payment vkey and the staking part will be the new stake address)
 cardano-cli address build \
     --testnet-magic 42 \
     --payment-verification-key-file=/workspace/cardano-private-testnet-setup/private-testnet/stake-delegator-keys/payment1.vkey \

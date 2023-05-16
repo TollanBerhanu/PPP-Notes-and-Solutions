@@ -34,7 +34,7 @@ cardano-cli transaction build \
     --protocol-params-file $pp
 
 # We include User 1's UTxO in its payment address to use as collateral
-# We sign the txn for the payment part of the txn not the staking part  ???
+# We sign the txn for the payment part of the txn not the staking part  ??? (because the staking part is handled by the script)
 cardano-cli transaction sign \
     --testnet-magic 42 \
     --tx-body-file $body \
