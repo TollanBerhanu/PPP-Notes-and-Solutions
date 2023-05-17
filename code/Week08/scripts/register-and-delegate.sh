@@ -4,9 +4,11 @@ tmp=/workspace/code/Week08/tmp
 txin=$1     # Input UTxO of user 1 to delegate to pool 1
 echo "txin: $txin"
 
-script=/workspace/code/Week08/assets/staking.plutus     # The serialized script
+# script=/workspace/code/Week08/assets/staking.plutus     # The serialized script
+script=/workspace/code/Week08/assets/staking-homework.plutus     # The serialized homework script
+
 script_stake_addr=$tmp/user1-script-stake.addr          # File to write the stake address of user 1 for the script  (place to put staking rewards) ?
-script_payment_addr=$tmp/user1-script.addr              # File to write the payment address of user 1 for the script
+script_payment_addr=$tmp/user1-script.addr              # File to write the script address for user 1 to withdraw rewards to
 registration=$tmp/registration.cert                     # File to write the registration certificate
 delegation=$tmp/delegation.cert                         # File to write the delegation certificate
 pp=$tmp/protocol-params.json                            # File to write the protocol parameters
@@ -26,7 +28,7 @@ cardano-cli stake-address build \
 
 echo "stake address: $(cat $script_stake_addr)"
 
-# Build the payment address from the serialized script (set the payment-verification-key to user 1's payment vkey and the staking part will be the new stake address)
+# Build the script address from the serialized script (set the payment-verification-key to user 1's payment vkey and the staking part will be the new stake address)
 cardano-cli address build \
     --testnet-magic 42 \
     --payment-verification-key-file=/workspace/cardano-private-testnet-setup/private-testnet/stake-delegator-keys/payment1.vkey \
@@ -65,6 +67,7 @@ cardano-cli transaction build \
     --certificate-file $registration \
     --certificate-file $delegation \
     --certificate-script-file $script \
+    --required-signer-hash "$(cat /workspace/code/Week08/homework/User1.pkh)" \
     --certificate-redeemer-file /workspace/code/Week08/assets/unit.json \
     --protocol-params-file $pp
 
@@ -81,3 +84,6 @@ cardano-cli transaction submit \
     --tx-file $signed
 
 # After all this, we have registered the staking address for User 1 using a StakingValidator script and sent some funds to it.  ???
+tid=$(cardano-cli transaction txid --tx-file "$signed")
+echo "transaction id: $tid"
+echo "Cardanoscan: https://preview.cardanoscan.io/transaction/$tid" 

@@ -8,6 +8,9 @@ pp=$tmp/protocol-params.json
 body=$tmp/tx.txbody
 signed=$tmp/tx.tx
 
+script=/workspace/code/Week08/assets/staking.plutus     # The serialized script
+# script=/workspace/code/Week08/assets/staking-homework.plutus     # The serialized homework script
+
 echo "txin = $1"
 echo "amt1 = $amt1"
 echo "amt2 = $amt2"
@@ -28,10 +31,11 @@ cardano-cli transaction build \
     --tx-in $txin \
     --tx-in-collateral $txin \
     --tx-out "$(cat /workspace/cardano-private-testnet-setup/private-testnet/addresses/payment2.addr)+$amt2 lovelace" \
+    --withdrawal-script-file $script \
     --withdrawal "$(cat $tmp/user1-script-stake.addr)+$amt1" \
-    --withdrawal-script-file /workspace/code/Week08/assets/staking.plutus \
     --withdrawal-redeemer-file /workspace/code/Week08/assets/unit.json \
     --protocol-params-file $pp
+    # --required-signer-hash "$(cat /workspace/code/Week08/homework/User1.pkh)"
 
 # We include User 1's UTxO in its payment address to use as collateral
 # We sign the txn for the payment part of the txn not the staking part  ??? (because the staking part is handled by the script)
