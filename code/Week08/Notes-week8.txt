@@ -43,3 +43,7 @@ Questions
 * What is a delegation certificate?
 * What is a staking address? When do we need it? Notice that StakeValidators have payment addresses.
 * What happens to your funds when you delegate to a pool?
+
+** I tried to change the change address to my original address after i delegated my UTxO ?? and seemed to work until it didn't. It successfully staked
+    the UTxO but no rewards were accumulating. So what is different about the new address we generate and how can we access the UTxOs that reside in   
+    that new address?
