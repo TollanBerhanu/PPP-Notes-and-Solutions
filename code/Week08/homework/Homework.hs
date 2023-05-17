@@ -15,12 +15,13 @@ module Homework
     ) where
 
 import           Plutus.V1.Ledger.Value (valueOf)
-import           Plutus.V2.Ledger.Api (Address, BuiltinData, PubKeyHash,
+import           Plutus.V2.Ledger.Api (Address, BuiltinData, PubKeyHash (PubKeyHash),
                                        ScriptContext (scriptContextTxInfo, scriptContextPurpose), StakeValidator,
                                        mkStakeValidatorScript, StakingCredential, TxOut (txOutValue, txOutAddress),
                                        TxInfo (txInfoOutputs, txInfoWdrl),
                                        adaSymbol, adaToken,
-                                    ScriptPurpose (Certifying, Rewarding))
+                                    ScriptPurpose (Certifying, Rewarding, Spending), BuiltinByteString)
+-- import          Plutus.V1.Ledger.Credential
 import qualified PlutusTx
 import qualified PlutusTx.AssocMap      as PlutusTx
 import           PlutusTx.Prelude     (($), (.), traceIfFalse, otherwise, (&&), Integer, Maybe (Nothing, Just), traceError, foldl, Ord (..),
@@ -37,7 +38,7 @@ import Plutus.V2.Ledger.Contexts (txSignedBy)
 --   2.) The given address needs to receive at least half of all withdrawn rewards.
 {-# INLINABLE mkStakeValidator' #-}
 mkStakeValidator' :: PubKeyHash -> Address -> () -> ScriptContext -> Bool
-mkStakeValidator' _pkh _addr () _ctx = traceIfFalse "Only user 1 can delegate or withdraw using this stake validator" signedByUser1 &&
+mkStakeValidator' _pkh _addr () _ctx = traceIfFalse "Only user 1 can delegate or withdraw using this stake validator" True &&
                                        traceIfFalse "You should send atleast half of the rewards to User 2" halfToUser2
     where
         info :: TxInfo
@@ -46,10 +47,16 @@ mkStakeValidator' _pkh _addr () _ctx = traceIfFalse "Only user 1 can delegate or
         signedByUser1 :: Bool
         signedByUser1 = txSignedBy (scriptContextTxInfo _ctx) _pkh
 
+        -- getPubKeyCredential :: StakingCredential -> PubKeyHash
+        -- getPubKeyCredential StakingCredential _ _ = undefined
+
         amount :: StakingCredential -> Integer  
+        
         amount cred = case PlutusTx.lookup cred $ txInfoWdrl info of    -- txInfoWdrl :: TxInfo -> Map StakingCredential Integer 
             Just amt -> amt
             Nothing  -> traceError "withdrawal not found"       
+        
+        -- df = StakingCredential _ _ :: StakingCredential
 
         paidToAddress :: Integer    
         paidToAddress = foldl addAdas 0 $ txInfoOutputs info  -- txInfoOutputs :: [TxOut] ... list of all outputs in the txn
@@ -63,6 +70,7 @@ mkStakeValidator' _pkh _addr () _ctx = traceIfFalse "Only user 1 can delegate or
         halfToUser2 = case scriptContextPurpose _ctx of
                         Certifying _   -> True                      -- (Certifying DCert) ... we don't consider the ScriptPurpose that has to do with Certifying
                         Rewarding cred -> 2 * paidToAddress >= amount cred     -- (Rewarding StakingCredential) ...  alteast half of the rewards is given to User 2
+                        Spending _     -> signedByUser1    
                         _              -> False    
 
 {-# INLINABLE mkWrappedStakeValidator' #-}
@@ -78,9 +86,7 @@ stakeValidator' pkh addr = mkStakeValidatorScript $
 ---------------------------------------------------------------------------------------------------
 ------------------------------------- HELPER FUNCTIONS --------------------------------------------
 
-saveStakeValidator' :: String -> String -> IO ()
+saveStakeValidator' :: BuiltinByteString -> String -> IO ()
 saveStakeValidator' _pkh _bech32 = case tryReadAddress _bech32 of   
         Nothing   -> ioError $ userError $ "Invalid address: " <> _bech32 
-        Just addr -> case tryReadAddress _pkh of 
-                         Nothing   -> ioError $ userError $ "Invalid address: " <> _bech32 
-                         Just pkh -> writeStakeValidatorToFile "./assets/staking.plutus" $ stakeValidator' pkh addr
+        Just addr -> writeStakeValidatorToFile "./assets/staking-homework.plutus" $ stakeValidator' (PubKeyHash _pkh) addr
