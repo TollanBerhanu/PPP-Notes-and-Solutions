@@ -77,7 +77,7 @@ export default function Oracle() {
         });
         if (!lucid || !nftPolicyIdHex || !nftTokenNameHex) return;
 
-        const Params = Data.Tuple([Data.Bytes(), Data.Bytes(), Data.Bytes()]);
+        const Params = Data.Tuple([Data.Bytes(), Data.Bytes(), Data.Bytes()]); // NFT policy id -> NFT TokenName -> PubKeyHash
         type Params = Data.Static<typeof Params>;
         const oracleScript: SpendingValidator = {
             type: "PlutusV2",
@@ -87,20 +87,20 @@ export default function Oracle() {
                 Params
             ),
         };
-        return oracleScript;
+        return oracleScript;    // return the oracle validator
     };
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////// DEPLOY ORACLE ///////////////////////////////////////////
 
     const deployOracle = async () => {
-        if (!lucid || !wAddr) {
+        if (!lucid || !wAddr) { // check if lucid is connected and that we have an address
             alert("Please connect account and mint NFT!");
             return;
         }
         const pkh: string =
             getAddressDetails(wAddr).paymentCredential?.hash || "";
-        const oracle = await getFinalScript(pkh);
+        const oracle = await getFinalScript(pkh);   // Use our pubkeyHash as a parameter to the script
         if (!oracle || !nftAssetClassHex) {
             alert("Please mint NFT first!");
             return;

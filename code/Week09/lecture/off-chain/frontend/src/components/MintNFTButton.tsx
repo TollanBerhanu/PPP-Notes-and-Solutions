@@ -24,9 +24,9 @@ export default function MintNFT() {
         unit: Unit;
     };
 
-    const getFinalPolicy = async (utxo: UTxO): Promise<GetFinalPolicy> => {
+    const getFinalPolicy = async (utxo: UTxO): Promise<GetFinalPolicy> => {     // apply params to the serialized minting policy
         const tn = fromText("Oracle's NFT");
-        const Params = Data.Tuple([Data.Bytes(), Data.Integer(), Data.Bytes()]);
+        const Params = Data.Tuple([Data.Bytes(), Data.Integer(), Data.Bytes()]);    // TxId -> TxIdx -> TokenName
         type Params = Data.Static<typeof Params>;
         const nftPolicy: MintingPolicy = {
             type: "PlutusV2",
@@ -38,7 +38,7 @@ export default function MintNFT() {
         };
         const policyId: PolicyId = lucid!.utils.mintingPolicyToId(nftPolicy);
         const unit: Unit = policyId + tn;
-        setAppState({
+        setAppState({       // Update our context (visible to all components)
             ...appState,
             nftPolicyIdHex: policyId,
             nftTokenNameHex: tn,
@@ -46,20 +46,20 @@ export default function MintNFT() {
             nftPolicy: nftPolicy,
         });
 
-        return { nftPolicy, unit };
+        return { nftPolicy, unit }; // return the NFT minting policy and the asset class
     };
 
     const mintNFT = async () => {
         console.log("minting NFT for " + wAddr);
-        if (wAddr) {
-            const utxo = await getUtxo(wAddr);
-            const { nftPolicy, unit } = await getFinalPolicy(utxo);
+        if (wAddr) {    // Check if we have an address (a connected wallet)
+            const utxo = await getUtxo(wAddr);     // get the first UTxO from the address
+            const { nftPolicy, unit } = await getFinalPolicy(utxo);     // serialize the NFT minting policy using the UTxO as a parameter
 
-            const tx = await lucid!
+            const tx = await lucid!     // Create a txn that mints the NFT
                 .newTx()
                 .mintAssets({ [unit]: 1n }, Data.void())
                 .attachMintingPolicy(nftPolicy)
-                .collectFrom([utxo])
+                .collectFrom([utxo])    // make sure we consume the UTxO
                 .complete();
 
             await signAndSubmitTx(tx);

@@ -58,28 +58,28 @@ import Text.Printf (printf)
 ----------------------------- ON-CHAIN: HELPER FUNCTIONS/TYPES ------------------------------------
 
 {-# INLINABLE parseOracleDatum #-}
-parseOracleDatum :: TxOut -> TxInfo -> Maybe Integer
+parseOracleDatum :: TxOut -> TxInfo -> Maybe Integer    --  We check and parse the Datum of the output UTxO
 parseOracleDatum o info = case txOutDatum o of
     NoOutputDatum -> Nothing
-    OutputDatum (Datum d) -> PlutusTx.fromBuiltinData d
+    OutputDatum (Datum d) -> PlutusTx.fromBuiltinData d     -- Inline datum: just parse the datum
     OutputDatumHash dh -> do
-                        Datum d <- findDatum dh info
-                        PlutusTx.fromBuiltinData d
+                        Datum d <- findDatum dh info        -- Datum's hash: find the actual datum from the ScriptContext
+                        PlutusTx.fromBuiltinData d          --               parse the datum
 
 ---------------------------------------------------------------------------------------------------
 ----------------------------------- ON-CHAIN / VALIDATOR ------------------------------------------
 
-data OracleParams = OracleParams
-    { oNFT        :: AssetClass
-    , oOperator   :: PubKeyHash
+data OracleParams = OracleParams    -- These parameters never change for the Oracle
+    { oNFT        :: AssetClass             -- The oracle can only use one NFT
+    , oOperator   :: PubKeyHash             -- The oracle can be operated by only one person
     } 
 PlutusTx.makeLift ''OracleParams
 
-data OracleRedeemer = Update | Delete
+data OracleRedeemer = Update | Delete     -- Once the OracleValidator is minted, it can only be updated/deleted
     deriving Prelude.Show
 PlutusTx.unstableMakeIsData ''OracleRedeemer
 
--- Oracle Datum
+-- Oracle Datum (price of ADA in USD ... in cents)
 type Rate = Integer
 
 {-# INLINABLE mkValidator #-}
