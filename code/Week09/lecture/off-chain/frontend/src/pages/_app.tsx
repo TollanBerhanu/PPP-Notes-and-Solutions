@@ -19,6 +19,8 @@ import {
     useEffect,
     useState,
 } from "react";
+import { blockfrostKey } from "@/secret/secret";
+
 
 const collateralScript: SpendingValidator = {
     type: "PlutusV2",
@@ -76,7 +78,7 @@ export default function App({ Component, pageProps }: AppProps) {
         const lucid = await Lucid.new(
             new Blockfrost(
                 "https://cardano-preview.blockfrost.io/api/v0",
-                "previewfz0NMrCf2gTuGYmnkzB4KfNmM3qzYBzL"
+                blockfrostKey
             ),
             "Preview"
         );
