@@ -6,6 +6,7 @@ body=$tmp/tx.txbody
 signed=$tmp/tx.tx
 
 user1=/workspace/cardano-private-testnet-setup/private-testnet/addresses/payment1.addr
+# user2=/workspace/cardano-private-testnet-setup/private-testnet/addresses/payment2.addr
 user1_stake=/workspace/code/Week08/tmp/user1-script.addr
 
 export CARDANO_NODE_SOCKET_PATH=/workspace/cardano-private-testnet-setup/private-testnet/node-spo1/node.sock
