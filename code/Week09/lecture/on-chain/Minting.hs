@@ -183,9 +183,9 @@ mkPolicy mp r ctx = case r of
 
     -- Check that the amount of stablecoins burned matches the amont at the collateral's datum
     checkBurnAmountMatchesColDatum :: Bool
-    checkBurnAmountMatchesColDatum = case collateralInputDatum of
+    checkBurnAmountMatchesColDatum = case collateralInputDatum of   -- This time we are looking for the datum of the input collateral UTxO
         Nothing -> False
-        Just d  -> negate (colStablecoinAmount d) == mintedAmount
+        Just d  -> negate (colStablecoinAmount d) == mintedAmount -- Extract the datum and compare it with the minted amount
 
     -- Check that the owner's signature is present
     checkColOwner :: Bool

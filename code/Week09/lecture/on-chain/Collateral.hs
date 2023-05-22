@@ -66,7 +66,7 @@ unstableMakeIsData ''CollateralDatum
 data CollateralRedeemer = Redeem | Liquidate
 unstableMakeIsData ''CollateralRedeemer
 
-
+-- This validator is used to unlock the Collateral at the collateral's address while we are burning stablecoins
 {-# INLINABLE mkValidator #-}
 mkValidator :: CollateralDatum -> CollateralRedeemer -> ScriptContext -> Bool
 mkValidator dat r ctx = case r of

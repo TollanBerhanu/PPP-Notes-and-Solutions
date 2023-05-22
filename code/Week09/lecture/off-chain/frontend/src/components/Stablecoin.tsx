@@ -150,7 +150,7 @@ export default function Stablecoin() {
     };
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////// BURN STABLECOINS /////////////////////////////////////////
+    ////////////////////////////// BURN / LIQUIDATE STABLECOINS ///////////////////////////////////
 
     const burnOrLiqSC = async () => {
         console.log("burnSC -> appState: ", appState);
@@ -168,31 +168,30 @@ export default function Stablecoin() {
             console.log(
                 `{-amountToBurnOrLiq: ${-amountToBurnOrLiq}, burn/liq: ${burnOrLiq}}`
             );
-            const pkh: string =
-                getAddressDetails(wAddr).paymentCredential?.hash || "";
+            const pkh: string = getAddressDetails(wAddr).paymentCredential?.hash || ""; // get PubKeyHash of current wallet
 
-            const colRed: CollateralRedeemer = burnOrLiq
+            const colRed: CollateralRedeemer = burnOrLiq                    // Set the Collateral Validator redeemer based on the selected radio button
                 ? "Redeem"
                 : "Liquidate";
-            const mpRed: MintRedeemer = burnOrLiq ? "Burn" : "Liquidate";
+            const mpRed: MintRedeemer = burnOrLiq ? "Burn" : "Liquidate";   // Set the Stablecoin MintingPolicy redeemer based on the selected radio button
 
             const tx = await lucid!
                 .newTx()
                 .readFrom([
-                    oracleWithNftUTxO,      // We explicitly read the UTxO with the NFT at the OracleValidator's address
+                    oracleWithNftUTxO,      // We explicitly read the UTxO with the NFT at the OracleValidator's address as refenence input (we don't consume it)
                     collateralRefScrUTxO,   // We explicitly read the UTxO containing the Collateral Validator as a reference script
                     mintingPolRefScrUTxO,   // We explicitly read the UTxO containing the Stablecoin MintingPolicy as a reference script
                 ])
                 .collectFrom(
                     [collateralToUnlockUTxO],   // We explicitly input the UTxO containing the Collateral we want to burn/liquidate
-                    Data.to<CollateralRedeemer>(colRed, CollateralRedeemer)
+                    Data.to<CollateralRedeemer>(colRed, CollateralRedeemer)     // We provide the appropriate redeemer
                 )
                 .mintAssets(
-                    { [scAssetClassHex]: -amountToBurnOrLiq },
-                    Data.to<MintRedeemer>(mpRed, MintRedeemer)
+                    { [scAssetClassHex]: -amountToBurnOrLiq },  // [AssetClass]: -amount    ... burn the stablecoins
+                    Data.to<MintRedeemer>(mpRed, MintRedeemer)  // Redeemer for the Stablecoin MintingPolicy
                 )
-                .addSignerKey(pkh)
-                .complete({ nativeUplc: false });
+                .addSignerKey(pkh)                  // This is actually only used when Burning / Redeeming, not Liquidating
+                .complete({ nativeUplc: false });// Balance the txn (the parameter is just a flag to change which compiler checks the validators... doesn't really matter)
 
             await signAndSubmitTx(tx);
         } else {
