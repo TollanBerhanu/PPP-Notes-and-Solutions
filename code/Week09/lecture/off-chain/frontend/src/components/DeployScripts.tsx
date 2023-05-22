@@ -26,14 +26,15 @@ export default function DeployScripts() {
         setMPerc(mPerc);
     };
 
+    // Function to get the MintingPolicy (for minting stablecoins) with the parameters applied to it
     const getFinalMintingPolicy = async () => {
         if (!lucid || !wAddr || !oracleScript || !mPerc) return;
-        const tn = fromText("USDP");
-        const oracleValidatorHash = await lucid.utils.validatorToScriptHash(
+        const tn = fromText("USDP");    // This TokenName has to be the same as the ones hard-coded in the MintingPolicy and the CollateralValidators
+        const oracleValidatorHash = await lucid.utils.validatorToScriptHash(        // Hash the oracleScript
             oracleScript
         );
-        const collateralValidatorHash = await lucid.utils.validatorToScriptHash(
-            collateralScript
+        const collateralValidatorHash = await lucid.utils.validatorToScriptHash(    // Hash the hard-coded collateralScript (it has no parameters)
+            collateralScript                                                        // The 'collateralScript' is defined in _app.tsx
         );
 
         console.log("Applying minting script to these parameters: ", {
@@ -42,7 +43,7 @@ export default function DeployScripts() {
             minPercent: mPerc,
         });
 
-        const Params = Data.Tuple([Data.Bytes(), Data.Bytes(), Data.Integer()]);
+        const Params = Data.Tuple([Data.Bytes(), Data.Bytes(), Data.Integer()]);    // OracleValidatorHash -> CollateralValidatorHash -> CollateralMinPercent
         type Params = Data.Static<typeof Params>;
         const scPolicy: MintingPolicy = {
             type: "PlutusV2",
@@ -52,10 +53,11 @@ export default function DeployScripts() {
                 Params
             ),
         };
-        const scPolicyId: PolicyId = lucid!.utils.mintingPolicyToId(scPolicy);
+        const scPolicyId: PolicyId = lucid!.utils.mintingPolicyToId(scPolicy);  // Get the PolicyId (CurrencySymbol) of the Stablecoin MintingPolicy
 
-        const unit: Unit = scPolicyId + tn;
-        const potentialStateUpdate = {
+        const unit: Unit = scPolicyId + tn;     // Create the AssetClass of the Stablecoin MintingPolicy by appending the CurrencySymbol and the TokenName
+        
+        const potentialStateUpdate = {      // We update the state if the txn succeeds 
             scPolicyIdHex: scPolicyId,
             scTokenNameHex: tn,
             scAssetClassHex: unit,
@@ -68,24 +70,25 @@ export default function DeployScripts() {
         return potentialStateUpdate;
     };
 
+    // Function to deploy the CollateralValidator and the MintnigPolicy as reference scripts to our own address so we can update the scripts if we wanted
     const deployBothScriptsInOneTx = async () => {
         if (!lucid || !wAddr || txScriptsDeployment) return;
         console.log("deployBothScriptsInOneTx -> appState: ", appState);
-        const psu = await getFinalMintingPolicy();
+        const psu = await getFinalMintingPolicy();      // Get the final Stablecoin MintingPolicy
         if (!psu?.scPolicy) return;
-        const tx = await lucid
+        const tx = await lucid  // Build the txn to deploy both scripts
             .newTx()
             .payToAddressWithData(
                 wAddr,
-                { inline: Data.void(), scriptRef: collateralScript },
-                {}
+                { inline: Data.void(), scriptRef: collateralScript },   // Attach the CollateralValidator script
+                {}      // We explicitly provide no Value ... min ADA will be automatically provided
             )
             .payToAddressWithData(
                 wAddr,
-                { inline: Data.void(), scriptRef: psu.scPolicy },
+                { inline: Data.void(), scriptRef: psu.scPolicy },   // Attach the Stablecoin MintingPolicy script
                 {}
             )
-            .complete();
+            .complete();    // Balance the txn (provide min ADA)
 
         const pid = await signAndSubmitTx(tx);
 
