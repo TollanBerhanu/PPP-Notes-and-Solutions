@@ -14,8 +14,8 @@ export default function MintNFT() {
     const { lucid, wAddr, nftPolicyIdHex } = appState;
 
     const getUtxo = async (address: string): Promise<UTxO> => {
-        const utxos = await lucid!.utxosAt(address);
-        const utxo = utxos[0];
+        const utxos = await lucid!.utxosAt(address);    // Get all UTxOs from an address
+        const utxo = utxos[0];  // Take the first UTxO
         return utxo;
     };
 
@@ -25,7 +25,7 @@ export default function MintNFT() {
     };
 
     const getFinalPolicy = async (utxo: UTxO): Promise<GetFinalPolicy> => {     // apply params to the serialized minting policy
-        const tn = fromText("Oracle's NFT");
+        const tn = fromText("Oracle's NFT");    // Get the HEX value of the string
         const Params = Data.Tuple([Data.Bytes(), Data.Integer(), Data.Bytes()]);    // TxId -> TxIdx -> TokenName
         type Params = Data.Static<typeof Params>;
         const nftPolicy: MintingPolicy = {
@@ -37,8 +37,8 @@ export default function MintNFT() {
             ),
         };
         const policyId: PolicyId = lucid!.utils.mintingPolicyToId(nftPolicy);
-        const unit: Unit = policyId + tn;
-        setAppState({       // Update our context (visible to all components)
+        const unit: Unit = policyId + tn;   // This is the asset class of the NFT
+        setAppState({       // Update our context (global state that's visible to all components)
             ...appState,
             nftPolicyIdHex: policyId,
             nftTokenNameHex: tn,
@@ -57,7 +57,7 @@ export default function MintNFT() {
 
             const tx = await lucid!     // Create a txn that mints the NFT
                 .newTx()
-                .mintAssets({ [unit]: 1n }, Data.void())
+                .mintAssets({ [unit]: 1n }, Data.void())    // (AssetClass, Redeemer)
                 .attachMintingPolicy(nftPolicy)
                 .collectFrom([utxo])    // make sure we consume the UTxO
                 .complete();

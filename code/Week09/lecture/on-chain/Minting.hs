@@ -33,7 +33,7 @@ import           Utilities       (wrapPolicy, writeCodeToFile)
 ------------------------------------ ON-CHAIN: VALIDATOR ------------------------------------------
 
 -- Oracle and collateral validator hashes are passed as parameters
-data MintParams = MintParams
+data MintParams = MintParams                    -- These will never change for this Stablecoin MintingPolicy
     { mpOracleValidator      :: ValidatorHash
     , mpCollateralValidator  :: ValidatorHash
     , mpCollateralMinPercent :: Integer
@@ -54,8 +54,9 @@ unstableMakeIsData ''MintRedeemer
 mkPolicy :: MintParams -> MintRedeemer -> ScriptContext -> Bool
 mkPolicy mp r ctx = case r of
     Mint      -> traceIfFalse "minted amount must be positive" checkMintPositive &&
-                 traceIfFalse "minted amount exceeds max" checkMaxMintOut &&
-                 traceIfFalse "invalid datum at collateral output" checkDatum
+                 traceIfFalse "minted amount exceeds max" checkMaxMintOut &&    -- Check amount minted based on value of the collateral
+                 traceIfFalse "invalid datum at collateral output" checkDatum   -- Check that the txn that mints the stablecoin creates the appropirate UTxO at the
+                                                                                    -- collateralAddress
 
     Burn      -> traceIfFalse "invalid burning amount" checkBurnAmountMatchesColDatum &&
                  traceIfFalse "owner's signature missing" checkColOwner &&
@@ -74,19 +75,19 @@ mkPolicy mp r ctx = case r of
     -- Get the oracle's input
     getOracleInput :: TxOut
     getOracleInput = case oracleInputs of
-                    [o] -> o
+                    [o] -> o        -- We explicitily read this UTxO in the txn, that's why there should only be one
                     _   -> traceError "expected exactly one oracle input"
         where
             oracleInputs :: [TxOut]
-            oracleInputs = [ o
-                           | i <- txInfoReferenceInputs info
+            oracleInputs = [ o      -- We read all input UTxOs and filter the ones whose addresses are equal to the oracle validator's address
+                           | i <- txInfoReferenceInputs info    --  we get the Oracle UTxO from the reference input, we are not consuming the UTxO
                            , let o = txInInfoResolved i
                            , txOutAddress o == scriptHashAddress (mpOracleValidator mp)
                            ]
 
     -- Get the rate (Datum) from the Oracle
     rate :: Integer
-    rate = case parseOracleDatum getOracleInput info of
+    rate = case parseOracleDatum getOracleInput info of     -- parseOracleDatum is used to extrace the value from the Oracle's Datum (defined in Oracle.hs)
         Nothing -> traceError "Oracle's datum not found"
         Just x  -> x
 
@@ -95,7 +96,8 @@ mkPolicy mp r ctx = case r of
 
     -- Get amount of stablecoins to minted (or burned if negative) in this transaction
     mintedAmount :: Integer
-    mintedAmount = assetClassValueOf (txInfoMint info) (AssetClass (ownCurrencySymbol ctx, stablecoinTokenName))
+    mintedAmount = assetClassValueOf (txInfoMint info) (AssetClass (ownCurrencySymbol ctx, stablecoinTokenName)) -- stablecoinTokenName = TokenName "USDP" 
+                                    -- txInfoMint gives us all the values minted in this txn
 
     -- Check that the amount of stablecoins minted is positive
     checkMintPositive :: Bool
@@ -135,8 +137,8 @@ mkPolicy mp r ctx = case r of
 
     -- Get the collateral's output datum and value
     collateralOutput :: (OutputDatum, Value)
-    collateralOutput = case scriptOutputsAt (mpCollateralValidator mp) info of
-                        [(h, v)] -> (h, v)
+    collateralOutput = case scriptOutputsAt (mpCollateralValidator mp) info of      -- scriptOutputsAt :: ValidatorHash -> TxInfo -> [(OutputDatum, Value)]
+                        [(h, v)] -> (h, v)      -- We explicitly give it the CollateralValidator as a reference script while we build the txn
                         _        -> traceError "expected exactly one collateral output"
 
     -- Get the collateral's output datum
@@ -153,11 +155,11 @@ mkPolicy mp r ctx = case r of
 
     -- Check that the collateral's output datum has the correct values
     checkDatum :: Bool
-    checkDatum = case collateralOutputDatum of
+    checkDatum = case collateralOutputDatum of  -- collateralOutputDatum is used to exract the value of the Collateral's datum (defined in Collateral.hs)
         Nothing -> False
-        Just d  -> colMintingPolicyId d  == ownCurrencySymbol ctx &&
-                   colStablecoinAmount d == mintedAmount &&
-                   txSignedBy info (colOwner d)
+        Just d  -> colMintingPolicyId d  == ownCurrencySymbol ctx &&  -- The MintingPolicy in the datum CurSym should be the same as the CurSym of this MintingPolicy
+                   colStablecoinAmount d == mintedAmount &&           -- The datum should contain the same stablecoin amount that we mint in this txn 
+                   txSignedBy info (colOwner d)                       -- This txn should be signed by the collateral owner specified in the datum
 
     -- Get the collateral's input
     collateralInput :: TxOut
