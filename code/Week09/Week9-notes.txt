@@ -1,0 +1,1 @@
+How can we read the datum of a UTxO sitting at a certain script address without actually consuming the UTxO?
