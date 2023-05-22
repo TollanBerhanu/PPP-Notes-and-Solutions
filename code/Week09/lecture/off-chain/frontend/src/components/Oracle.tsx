@@ -9,7 +9,7 @@ import {
 import { applyParamsToScript, Data } from "lucid-cardano";
 import { useContext, useEffect, useState } from "react";
 
-const OracleRedeemer = Data.Enum([
+const OracleRedeemer = Data.Enum([  // Define a type for the redeemer
     Data.Literal("Update"),
     Data.Literal("Delete"),
 ]);
@@ -18,8 +18,8 @@ type OracleRedeemer = Data.Static<typeof OracleRedeemer>;
 export default function Oracle() {
     const { appState, setAppState } = useContext(AppStateContext);
     const {
-        lucid,
-        wAddr,
+        lucid,  // Import wallet from global state
+        wAddr,  // Import wallet address from global state
         nftPolicyIdHex,
         nftTokenNameHex,
         nftAssetClassHex,
@@ -31,40 +31,40 @@ export default function Oracle() {
     const [count, setCount] = useState(0);
 
     useEffect(() => {
-        getOracleNftUtxO();
+        getOracleNftUtxO();         // This function will run every 5 seconds
         setTimeout(() => setCount(count + 1), 5e3);
     }, [count]);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// HELPER FUNCTIONS ///////////////////////////////////////////
 
-    const getOracleNftUtxO = async () => {
+    const getOracleNftUtxO = async () => {  // This function is used to get the UTxO at the oracle's address with the NFT
         if (lucid && wAddr && oracleAddress) {
-            const oracUtxO = await lucid.utxosAt(oracleAddress).catch((err) => {
+            const oracUtxO = await lucid.utxosAt(oracleAddress).catch((err) => {    // get all UTxOs at oracleAddress
                 console.log("Can't find Oracle UtxO");
             });
             if (!oracUtxO) return;
             const oracWithNftUTxO = oracUtxO.find((utxo: UTxO) => {
                 return Object.keys(utxo.assets).some((key) => {
-                    return key == nftAssetClassHex;
+                    return key == nftAssetClassHex;             // find the UTxO with the NFT's assetclass in its Value
                 });
             });
             if (
-                oracWithNftUTxO == undefined ||
-                oracWithNftUTxO == oracleWithNftUTxO
+                oracWithNftUTxO == undefined ||         // If the UTxO doesn't exist yet or
+                oracWithNftUTxO == oracleWithNftUTxO    // If the UTxO is the same as the previous one, don't update the state
             )
                 return;
             setAppState({
                 ...appState,
-                oracleWithNftUTxO: oracWithNftUTxO,
+                oracleWithNftUTxO: oracWithNftUTxO, // Set the global state to that UTxO
             });
         }
     };
 
-    const parseRate = (r: string) => {
+    const parseRate = (r: string) => {      // Convert rate from string to a bigint number
         const rate = BigInt(Number(r));
         if (Number.isNaN(rate)) return;
-        setRate(rate);
+        setRate(rate);          // Update rate state
     };
 
     const getFinalScript = async (
@@ -72,12 +72,12 @@ export default function Oracle() {
     ): Promise<SpendingValidator | undefined> => {
         console.log("Deploying Oracle with Rate and AssetClass: ", {
             rate,
-            nftPolicyIdHex,
+            nftPolicyIdHex, 
             nftTokenNameHex,
         });
-        if (!lucid || !nftPolicyIdHex || !nftTokenNameHex) return;
+        if (!lucid || !nftPolicyIdHex || !nftTokenNameHex) return;  // Get the PolicyId and TokenName from global state
 
-        const Params = Data.Tuple([Data.Bytes(), Data.Bytes(), Data.Bytes()]); // NFT policy id -> NFT TokenName -> PubKeyHash
+        const Params = Data.Tuple([Data.Bytes(), Data.Bytes(), Data.Bytes()]); // NFT PolicyId (CurSym) -> NFT TokenName -> Operator PubKeyHash
         type Params = Data.Static<typeof Params>;
         const oracleScript: SpendingValidator = {
             type: "PlutusV2",
@@ -98,28 +98,27 @@ export default function Oracle() {
             alert("Please connect account and mint NFT!");
             return;
         }
-        const pkh: string =
-            getAddressDetails(wAddr).paymentCredential?.hash || "";
+        const pkh: string = getAddressDetails(wAddr).paymentCredential?.hash || ""; // Get the PubKeyHash of our address's paymentCredential
         const oracle = await getFinalScript(pkh);   // Use our pubkeyHash as a parameter to the script
         if (!oracle || !nftAssetClassHex) {
             alert("Please mint NFT first!");
             return;
         }
-        const oracleAddress = lucid!.utils.validatorToAddress(oracle);
+        const oracleAddress = lucid!.utils.validatorToAddress(oracle);  // Get the address of the final oracle script to send the UTxO (NFT + Datum) to
         console.log("final oracle script: ", oracle);
         console.log("final oracle address: ", oracleAddress);
-        setAppState({
+        setAppState({   // Set global state
             ...appState,
             oracleScript: oracle,
             oracleAddress: oracleAddress,
         });
 
-        const tx = await lucid!
+        const tx = await lucid! //  build the txn that deploys the oracle
             .newTx()
             .payToContract(
                 oracleAddress,
-                { inline: Data.to(rate, Data.Integer()) },
-                { [nftAssetClassHex]: 1n }
+                { inline: Data.to(rate, Data.Integer()) },  // Set the inline datum to the USD/ADA rate
+                { [nftAssetClassHex]: 1n }                  // We 'pay' 1 NFT to the oracleAddress
             )
             .addSignerKey(pkh)
             .complete();
@@ -134,23 +133,22 @@ export default function Oracle() {
             wAddr &&
             lucid &&
             nftAssetClassHex &&
-            oracleScript &&
-            oracleWithNftUTxO &&
+            oracleScript &&         // We check if the Oracle script is deployed
+            oracleWithNftUTxO &&    // We check for the UTxO with the NFT at the oracle's address 
             oracleAddress
         ) {
-            const pkh: string =
-                getAddressDetails(wAddr).paymentCredential?.hash || "";
+            const pkh: string = getAddressDetails(wAddr).paymentCredential?.hash || ""; // Get PubKeyHash of current wallet
 
-            const tx = await lucid!
+            const tx = await lucid! // Build a txn that updates the oracle
                 .newTx()
                 .collectFrom(
-                    [oracleWithNftUTxO], // UTXO to spend
-                    Data.to<OracleRedeemer>("Update", OracleRedeemer) // Redeemer
+                    [oracleWithNftUTxO],                                // UTXO to spend (the current UTxO with the NFT at the oracleAddress)
+                    Data.to<OracleRedeemer>("Update", OracleRedeemer)   // Redeemer for the Oracle validator (because we are consuming a UTxO from the oracleAddress)
                 )
                 .payToContract(
-                    oracleAddress,
-                    { inline: Data.to(rate, Data.Integer()) },
-                    { [nftAssetClassHex]: 1n }
+                    oracleAddress,                                      // We send to the oracleAddress again
+                    { inline: Data.to(rate, Data.Integer()) },          // Inline datum with updated rate
+                    { [nftAssetClassHex]: 1n }                          // The same NFT we consumed (collected) above
                 )
                 .attachSpendingValidator(oracleScript)
                 .addSignerKey(pkh)
@@ -181,9 +179,9 @@ export default function Oracle() {
                 .newTx()
                 .collectFrom(
                     [oracleWithNftUTxO], // UTXO to spend
-                    Data.to<OracleRedeemer>("Delete", OracleRedeemer) // Redeemer
+                    Data.to<OracleRedeemer>("Delete", OracleRedeemer) // Redeemer 
                 )
-                .payToAddress(wAddr, { [nftAssetClassHex]: 1n })
+                .payToAddress(wAddr, { [nftAssetClassHex]: 1n })    // We send the NFT to our own address
                 .attachSpendingValidator(oracleScript)
                 .addSignerKey(pkh)
                 .complete();

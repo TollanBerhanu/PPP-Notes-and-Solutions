@@ -61,7 +61,7 @@ import Text.Printf (printf)
 parseOracleDatum :: TxOut -> TxInfo -> Maybe Integer    --  We check and parse the Datum of the output UTxO
 parseOracleDatum o info = case txOutDatum o of
     NoOutputDatum -> Nothing
-    OutputDatum (Datum d) -> PlutusTx.fromBuiltinData d     -- Inline datum: just parse the datum
+    OutputDatum (Datum d) -> PlutusTx.fromBuiltinData d     -- Inline datum: just parse the datum (check if it is an Integer)
     OutputDatumHash dh -> do
                         Datum d <- findDatum dh info        -- Datum's hash: find the actual datum from the ScriptContext
                         PlutusTx.fromBuiltinData d          --               parse the datum
@@ -84,12 +84,12 @@ type Rate = Integer
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: OracleParams -> Rate -> OracleRedeemer -> ScriptContext -> Bool
-mkValidator oracle _ r ctx =
+mkValidator oracle _ r ctx =    -- We don't use the Rate (Datum) in this validator ... we read the rate as a reference input in other validators
     case r of
-        Update -> traceIfFalse "token missing from input"   inputHasToken  &&
-                  traceIfFalse "token missing from output"  outputHasToken &&
+        Update -> traceIfFalse "token missing from input"   inputHasToken  &&           -- We must consume the prev Oracle with the NFT
+                  traceIfFalse "token missing from output"  outputHasToken &&            
                   traceIfFalse "operator signature missing" checkOperatorSignature &&
-                  traceIfFalse "invalid output datum"       validOutputDatum
+                  traceIfFalse "invalid output datum"       validOutputDatum            -- The datum of the o/p UTxO must be an Integer
         Delete -> traceIfFalse "operator signature missing" checkOperatorSignature
 
   where
@@ -108,7 +108,7 @@ mkValidator oracle _ r ctx =
 
     -- Check that the oracle input contains the NFT.
     inputHasToken :: Bool
-    inputHasToken = assetClassValueOf (txOutValue ownInput) (oNFT oracle) == 1
+    inputHasToken = assetClassValueOf (txOutValue ownInput) (oNFT oracle) == 1  -- Check that the AssetClass of the NFT has amount == 1
 
     -- | Find the oracle output.
     ownOutput :: TxOut
@@ -146,9 +146,9 @@ validator oracle = mkValidatorScript $
 mkWrappedValidatorLucid :: BuiltinData ->  BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ()
 mkWrappedValidatorLucid cs tn pkh = wrapValidator $ mkValidator op
     where
-        op = OracleParams
-            { oNFT = AssetClass (unsafeFromBuiltinData cs, unsafeFromBuiltinData tn)
-            , oOperator   = unsafeFromBuiltinData pkh
+        op = OracleParams   -- Parse the parameters to apply them to the mkValidator function
+            { oNFT = AssetClass (unsafeFromBuiltinData cs, unsafeFromBuiltinData tn)    -- Build the AssetClass from the 'CurrencySymbol' and the 'TokenName'
+            , oOperator   = unsafeFromBuiltinData pkh       -- Convert pkh from BuiltinData to PubKeyHash
             }
 
 validatorCode :: CompiledCode (BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> BuiltinData -> ())
