@@ -8,7 +8,7 @@ import { getAddressDetails } from "lucid-cardano";
 import { Data } from "lucid-cardano";
 import { useContext, useState } from "react";
 
-const CollateralDatum = Data.Object({
+const CollateralDatum = Data.Object({   // Define the datatype of the collateral datum
     colMintingPolicyId: Data.Bytes(),
     colOwner: Data.Bytes(),
     colStablecoinAmount: Data.Integer(),
@@ -113,34 +113,32 @@ export default function Stablecoin() {
             scPolicyIdHex &&
             amountToMint > 0n
         ) {
-            const pkh: string =
-                getAddressDetails(wAddr).paymentCredential?.hash || "";
+            const pkh: string = getAddressDetails(wAddr).paymentCredential?.hash || ""; // get current address's PubKeyHash
 
-            const collDatum: CollateralDatum = {
+            const collDatum: CollateralDatum = {    // Define the datum we add to our collateral UTxO ... this is for lucid
                 colMintingPolicyId: scPolicyIdHex,
                 colOwner: pkh,
                 colStablecoinAmount: amountToMint,
             };
 
-            const collateralAddr =
-                lucid.utils.validatorToAddress(collateralScript);
+            const collateralAddr = lucid.utils.validatorToAddress(collateralScript);    // get the address of the Collateral script to send our collateral to
 
             const tx = await lucid!
                 .newTx()
-                .readFrom([oracleWithNftUTxO, mintingPolRefScrUTxO])
+                .readFrom([oracleWithNftUTxO, mintingPolRefScrUTxO])    // We explicitly read the UTxO containing the Oracle
                 .payToContract(
                     collateralAddr,
                     {
                         inline: Data.to<CollateralDatum>(
-                            collDatum,
-                            CollateralDatum
+                            collDatum,          // Our Collateral datum
+                            CollateralDatum     // The data type of the Collateral datum
                         ),
                     },
-                    { lovelace: collValueToLock * 1000000n }
+                    { lovelace: collValueToLock * 1000000n }    // We get the 'collValueToLock' from the UI and convert it to lovelace
                 )
-                .mintAssets(
-                    { [scAssetClassHex]: amountToMint },
-                    Data.to<MintRedeemer>("Mint", MintRedeemer)
+                .mintAssets(                                    // We mint the stablecoin in the same txn
+                    { [scAssetClassHex]: amountToMint },            // [AssetClass]: amount
+                    Data.to<MintRedeemer>("Mint", MintRedeemer)     // "Value", datatype
                 )
                 .addSignerKey(pkh)
                 .complete();
@@ -181,12 +179,12 @@ export default function Stablecoin() {
             const tx = await lucid!
                 .newTx()
                 .readFrom([
-                    oracleWithNftUTxO,
-                    collateralRefScrUTxO,
-                    mintingPolRefScrUTxO,
+                    oracleWithNftUTxO,      // We explicitly read the UTxO with the NFT at the OracleValidator's address
+                    collateralRefScrUTxO,   // We explicitly read the UTxO containing the Collateral Validator as a reference script
+                    mintingPolRefScrUTxO,   // We explicitly read the UTxO containing the Stablecoin MintingPolicy as a reference script
                 ])
                 .collectFrom(
-                    [collateralToUnlockUTxO],
+                    [collateralToUnlockUTxO],   // We explicitly input the UTxO containing the Collateral we want to burn/liquidate
                     Data.to<CollateralRedeemer>(colRed, CollateralRedeemer)
                 )
                 .mintAssets(

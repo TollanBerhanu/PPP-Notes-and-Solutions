@@ -40,7 +40,7 @@ import qualified Prelude
 ----------------------------- ON-CHAIN: HELPER FUNCTIONS/TYPES ------------------------------------
 
 stablecoinTokenName :: TokenName 
-stablecoinTokenName = TokenName $ encodeUtf8 "USDP"
+stablecoinTokenName = TokenName $ encodeUtf8 "USDP" -- We hard-code the Stablecoin TokenName
 
 {-# INLINABLE parseCollateralDatum #-}
 parseCollateralDatum :: OutputDatum -> TxInfo -> Maybe CollateralDatum
